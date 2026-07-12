@@ -34,6 +34,8 @@ Recommended:
 - `GOOGLE_SCRIPT_URL`: deployed Google Apps Script quote endpoint
 - `ALLOWED_ORIGINS`: comma-separated production origins, such as `https://txmulching.com,https://www.txmulching.com`
 
+The chat interface is included in the site but will return a clear “not activated” message until `XAI_API_KEY` is configured in Vercel.
+
 Both API routes validate origin and request size and apply basic in-memory rate limiting. For sustained traffic, move rate limiting to Vercel Firewall, Cloudflare, or a shared data store.
 
 The chat endpoint sends only the recent conversation and verified business context to xAI. It uses the Responses API with `store: false`, limits message length, excludes sensitive-data requests, and does not expose the API key in the browser.

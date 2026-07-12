@@ -25,10 +25,10 @@ function isRateLimited(ip) {
 function validOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return true;
-  const allowed = (process.env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
-  if (allowed.length) return allowed.includes(origin);
   const host = req.headers['x-forwarded-host'] || req.headers.host;
-  return origin === `https://${host}` || origin === `http://${host}`;
+  if (origin === `https://${host}` || origin === `http://${host}`) return true;
+  const allowed = (process.env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
+  return allowed.includes(origin);
 }
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

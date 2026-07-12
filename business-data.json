@@ -1,0 +1,29 @@
+{
+  "businessName": "TX Mulching, LLC",
+  "phone": "+1-903-567-9917",
+  "displayPhone": "(903) 567-9917",
+  "homeBase": "Canton, Texas",
+  "tagline": "You Own It. We Clear It.",
+  "serviceArea": "East Texas and select statewide Texas projects",
+  "experience": {
+    "landClearingYears": "9+",
+    "heavyEquipmentYears": "50+",
+    "ownerInvolvedEveryProject": true
+  },
+  "services": [
+    "Forestry Mulching",
+    "Land Clearing",
+    "Brush Removal",
+    "Fence-Line Clearing",
+    "Trail Cutting",
+    "Lot Clearing",
+    "Right-of-Way Clearing",
+    "Pond and Access Cleanup"
+  ],
+  "positioning": [
+    "Owner-led work",
+    "Heavy equipment for serious clearing",
+    "Clean, usable finish",
+    "Private, commercial and government-ready"
+  ]
+}

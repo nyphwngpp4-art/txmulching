@@ -38,7 +38,7 @@ The chat interface is included in the site but will return a clear “not activa
 
 Both API routes validate origin and request size and apply basic in-memory rate limiting. For sustained traffic, move rate limiting to Vercel Firewall, Cloudflare, or a shared data store.
 
-The chat endpoint sends only the recent conversation and verified business context to xAI. It uses the Responses API with `store: false`, limits message length, excludes sensitive-data requests, and does not expose the API key in the browser.
+The chat endpoint sends only the recent conversation and verified business context to xAI. It uses the Responses API with `store: false`, which instructs xAI not to store the request and response for conversation continuation. It also limits message length, excludes sensitive-data requests, and does not expose the API key in the browser.
 
 ## Local development
 

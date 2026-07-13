@@ -1,8 +1,7 @@
-import fs from 'node:fs';
+// Cloudflare Pages Function: POST /api/chat
+// Server-side proxy to the xAI Responses API. Keeps the API key server-side.
 
-const businessData = JSON.parse(
-  fs.readFileSync(new URL('../business-data.json', import.meta.url), 'utf8')
-);
+import businessData from '../../business-data.json';
 
 const WINDOW_MS = 5 * 60 * 1000;
 const MAX_REQUESTS = 20;
@@ -10,17 +9,16 @@ const MAX_MESSAGES = 12;
 const MAX_MESSAGE_LENGTH = 1_000;
 const requestLog = new Map();
 
-function json(res, status, body) {
-  res.status(status).setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
-  return res.end(JSON.stringify(body));
+function json(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
+  });
 }
 
-function getClientIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  return Array.isArray(forwarded)
-    ? forwarded[0]
-    : String(forwarded || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+function getClientIp(request) {
+  return request.headers.get('cf-connecting-ip')
+    || String(request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim();
 }
 
 function isRateLimited(ip) {
@@ -32,15 +30,12 @@ function isRateLimited(ip) {
   return false;
 }
 
-function validOrigin(req) {
-  const origin = req.headers.origin;
+function validOrigin(request, env) {
+  const origin = request.headers.get('origin');
   if (!origin) return true;
-  const allowed = (process.env.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
   if (allowed.length) return allowed.includes(origin);
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
   return origin === `https://${host}` || origin === `http://${host}`;
 }
 
@@ -87,28 +82,33 @@ Behavior:
 - Do not request financial, medical, government-ID, password, or other sensitive information.
 - Keep most answers under 120 words.`;
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return json(res, 405, { error: 'Method not allowed.' });
+export async function onRequest(context) {
+  const { request, env } = context;
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed.' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', Allow: 'POST' }
+    });
   }
 
-  if (!validOrigin(req)) return json(res, 403, { error: 'Request origin is not allowed.' });
+  if (!validOrigin(request, env)) return json(403, { error: 'Request origin is not allowed.' });
 
-  const contentLength = Number(req.headers['content-length'] || 0);
-  if (contentLength > 25_000) return json(res, 413, { error: 'Request is too large.' });
+  const contentLength = Number(request.headers.get('content-length') || 0);
+  if (contentLength > 25_000) return json(413, { error: 'Request is too large.' });
 
-  if (isRateLimited(getClientIp(req))) {
-    return json(res, 429, { error: 'Too many chat requests. Please wait a few minutes.' });
+  if (isRateLimited(getClientIp(request))) {
+    return json(429, { error: 'Too many chat requests. Please wait a few minutes.' });
   }
 
-  if (!process.env.XAI_API_KEY) {
-    return json(res, 503, { error: 'The chat assistant has not been activated yet.' });
+  if (!env.XAI_API_KEY) {
+    return json(503, { error: 'The chat assistant has not been activated yet.' });
   }
 
-  const messages = sanitizeMessages(req.body?.messages);
+  const parsed = await request.json().catch(() => null);
+  const messages = sanitizeMessages(parsed?.messages);
   if (!messages.length || messages.at(-1)?.role !== 'user') {
-    return json(res, 400, { error: 'Enter a message to continue.' });
+    return json(400, { error: 'Enter a message to continue.' });
   }
 
   const controller = new AbortController();
@@ -119,10 +119,10 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.XAI_API_KEY}`
+        Authorization: `Bearer ${env.XAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: process.env.XAI_MODEL || 'grok-4.5',
+        model: env.XAI_MODEL || 'grok-4.5',
         input: [{ role: 'system', content: systemPrompt }, ...messages],
         store: false
       }),
@@ -132,18 +132,18 @@ export default async function handler(req, res) {
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       console.error('xAI chat error', upstream.status, data?.error?.message || 'Unknown upstream error');
-      return json(res, 502, { error: 'The chat assistant is temporarily unavailable.' });
+      return json(502, { error: 'The chat assistant is temporarily unavailable.' });
     }
 
     const reply = extractReply(data);
-    if (!reply) return json(res, 502, { error: 'The chat assistant returned an empty response.' });
-    return json(res, 200, { reply });
+    if (!reply) return json(502, { error: 'The chat assistant returned an empty response.' });
+    return json(200, { reply });
   } catch (error) {
     console.error('Chat request failed', error?.name || error);
     const message = error?.name === 'AbortError'
       ? 'The chat assistant took too long to respond.'
       : 'The chat assistant is temporarily unavailable.';
-    return json(res, 502, { error: message });
+    return json(502, { error: message });
   } finally {
     clearTimeout(timeout);
   }

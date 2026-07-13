@@ -1,1494 +1,165 @@
-<!DOCTYPE html><html lang="en"><head>
-
-
-
-    <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>TX Mulching | Forestry Mulching &amp; Land Clearing — Canton, TX</title>
-<meta content="TX Mulching, LLC — forestry mulching, land clearing, brush removal, ROW cleanup, and more. Owner-oversight operation out of Canton, Texas. Serving East Texas and select statewide projects." name="description"/>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<style>
-        /* ── TOKENS ── */
-        :root {
-            --black: #0C0B08;
-            --dark: #141410;
-            --panel: #1C1B16;
-            --border: #2E2C24;
-            --amber: #E89A0A;
-            --amber-d: #B87A06;
-            --amber-l: #F5B830;
-            --green: #2C4A1C;
-            --green-l: #3D6628;
-            --cream: #F2EAD6;
-            --muted: rgba(242, 234, 214, 0.55);
-            --max: 1160px;
-            --r: 10px
-        }
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0
-        }
-        html {
-            scroll-behavior: smooth
-        }
-        body {
-            font-family: "Inter", sans-serif;
-            background: var(--black);
-            color: var(--cream);
-            line-height: 1.6
-        }
-        a {
-            color: inherit;
-            text-decoration: none
-        }
-        img {
-            max-width: 100%;
-            display: block
-        }
-        .wrap {
-            width: min(var(--max), calc(100% - 32px));
-            margin: 0 auto
-        }
-        /* ── TOPBAR ── */
-        .topbar {
-            background: var(--amber);
-            color: var(--black);
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase
-        }
-        .topbar .wrap {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 9px 0;
-            gap: 12px;
-            flex-wrap: wrap
-        }
-        .topbar a {
-            color: var(--black)
-        }
-        .topbar a:hover {
-            opacity: 0.75
-        }
-        /* ── NAV ── */
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: rgba(12, 11, 8, 0.96);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border)
-        }
-        .nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 14px 0
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px
-        }
-        .logo-mark {
-            width: 48px;
-            height: 48px;
-            background: var(--amber);
-            border-radius: 8px;
-            display: grid;
-            place-items: center;
-            flex-shrink: 0;
-            padding: 6px
-        }
-        .logo-text .eyebrow {
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
-            color: var(--amber);
-            line-height: 1
-        }
-        .logo-text .name {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 26px;
-            letter-spacing: 0.06em;
-            line-height: 1;
-            color: var(--cream)
-        }
-        nav ul {
-            display: flex;
-            gap: 24px;
-            list-style: none
-        }
-        nav a {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--muted);
-            transition: color 0.15s
-        }
-        nav a:hover {
-            color: var(--amber)
-        }
-        /* ── BUTTONS ── */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 22px;
-            border-radius: 6px;
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 16px;
-            letter-spacing: 0.1em;
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap
-        }
-        .btn-amber {
-            background: var(--amber);
-            color: var(--black);
-            border-color: var(--amber)
-        }
-        .btn-amber:hover {
-            background: var(--amber-l);
-            border-color: var(--amber-l);
-            transform: translatey(-1px)
-        }
-        .btn-ghost {
-            background: transparent;
-            color: var(--cream);
-            border-color: rgba(242, 234, 214, 0.25)
-        }
-        .btn-ghost:hover {
-            border-color: var(--amber);
-            color: var(--amber)
-        }
-        .btn-lg {
-            padding: 16px 32px;
-            font-size: 20px
-        }
-        /* ── HERO ── */
-        .hero {
-            position: relative;
-            overflow: hidden;
-            min-height: 88vh;
-            display: flex;
-            align-items: center
-        }
-        .hero-bg {
-            position: absolute;
-            inset: 0;
-            background: var(--black)
-        }
-        .hero-image-container {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden
-        }
-        .hero-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: grayscale(100%) brightness(0.7) contrast(1.1);
-        }
-        .hero-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(100deg, rgba(12, 11, 8, 0.95) 0%, rgba(12, 11, 8, 0.82) 55%, rgba(12, 11, 8, 0.5) 100%);
-            z-index: 1
-        }
-        .hero-grain {
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            opacity: 0.15;
-            pointer-events: none;
-            background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBR4cyVP5DXKiv7YeM5yTaAQbQijzaT1erem6Ss3EJsx7dW5OSOMLsLXpJ5uSsVoQoHevdmAhy01rbL5rruAQhpbtnec0xRR-XtOJJ8IDytTYA0Ks72Pb_dg4QKls5VbYok-qmLRdAxoJq9J85z3nXGXWyVTbtU46S0qDUofpkZEefOf0WS0hazRfCpn7NgP0xlJfD8SSpgERxBn_2tIM5wOg9C2-fN2QSP6NP02DlZKyja0EosVSj0sG-UBQyJpBQIf_4rgN2JHA)
-        }
-        .hero-accent {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--amber-d), var(--amber), var(--amber-l), var(--amber));
-            z-index: 5
-        }
-        .hero .wrap {
-            position: relative;
-            z-index: 10;
-            padding: 80px 0 72px;
-            display: grid;
-            grid-template-columns: 1fr 360px;
-            gap: 48px;
-            align-items: center
-        }
-        .hero-kicker-row {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 18px
-        }
-        .hero-kicker {
-            display: inline-block;
-            background: var(--amber);
-            color: var(--black);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
-            padding: 5px 12px;
-            border-radius: 3px
-        }
-        .owner-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            background: rgba(61, 102, 40, 0.2);
-            border: 1px solid var(--green-l);
-            border-radius: 100px;
-            color: #a0c880;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em
-        }
-        .owner-badge span {
-            font-size: 14px;
-            color: var(--amber)
-        }
-        .hero h1 {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: clamp(64px, 9vw, 110px);
-            line-height: 0.92;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            color: var(--cream);
-            margin-bottom: 20px
-        }
-        .hero h1 em {
-            font-style: normal;
-            color: var(--amber)
-        }
-        .hero-sub {
-            font-size: 16px;
-            color: rgba(242, 234, 214, 0.75);
-            max-width: 48ch;
-            margin-bottom: 32px;
-            line-height: 1.7
-        }
-        .hero-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap
-        }
-        /* ── HERO CARD ── */
-        .hero-card {
-            background: rgba(20, 20, 16, 0.85);
-            border: 1px solid var(--border);
-            border-top: 3px solid var(--amber);
-            border-radius: var(--r);
-            padding: 28px;
-            backdrop-filter: blur(8px)
-        }
-        .hero-card-title {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 22px;
-            letter-spacing: 0.08em;
-            color: var(--amber);
-            text-transform: uppercase;
-            margin-bottom: 16px
-        }
-        .hero-card ul {
-            list-style: none;
-            display: grid;
-            gap: 10px
-        }
-        .hero-card li {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 14px;
-            color: rgba(242, 234, 214, 0.9);
-            line-height: 1.5
-        }
-        .check-icon {
-            width: 18px;
-            height: 18px;
-            background: var(--amber);
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            flex-shrink: 0;
-            margin-top: 1px
-        }
-        .check-icon svg {
-            width: 10px;
-            height: 10px
-        }
-        /* ── STRIP ── */
-        .strip {
-            background: var(--amber)
-        }
-        .strip-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr)
-        }
-        .strip-item {
-            padding: 18px 20px;
-            border-left: 1px solid rgba(0, 0, 0, 0.12)
-        }
-        .strip-item:first-child {
-            border-left: none
-        }
-        .strip-item strong {
-            display: block;
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 16px;
-            letter-spacing: 0.08em;
-            color: var(--black);
-            text-transform: uppercase;
-            margin-bottom: 2px
-        }
-        .strip-item span {
-            font-size: 12px;
-            color: rgba(12, 11, 8, 0.65);
-            line-height: 1.4
-        }
-        /* ── SECTION BASE ── */
-        section {
-            padding: 80px 0
-        }
-        .eyebrow {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: var(--amber);
-            margin-bottom: 10px
-        }
-        h2.section-title {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: clamp(38px, 5vw, 58px);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            line-height: 0.95;
-            color: var(--cream);
-            margin-bottom: 16px
-        }
-        .section-body {
-            font-size: 15px;
-            color: var(--muted);
-            max-width: 56ch;
-            line-height: 1.7
-        }
-        /* ── SERVICES ── */
-        .services {
-            background: var(--dark)
-        }
-        .services-intro {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 24px;
-            margin-bottom: 40px;
-            flex-wrap: wrap
-        }
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2px;
-            background: var(--border);
-            border-radius: var(--r);
-            overflow: hidden
-        }
-        .service-card {
-            background: var(--panel);
-            padding: 22px 20px;
-            transition: background 0.15s;
-            position: relative
-        }
-        .service-card:hover {
-            background: #1a2414
-        }
-        .service-card::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--green-l);
-            transform: scalex(0);
-            transform-origin: left;
-            transition: transform 0.2s
-        }
-        .service-card:hover::after {
-            transform: scalex(1)
-        }
-        .service-icon {
-            width: 42px;
-            height: 42px;
-            margin-bottom: 16px;
-            padding: 8px;
-            background: rgba(61, 102, 40, 0.15);
-            border-radius: 8px
-        }
-        .service-icon svg {
-            width: 100%;
-            height: 100%;
-            stroke: var(--green-l)
-        }
-        .service-card h3 {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 20px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--cream);
-            margin-bottom: 6px
-        }
-        .service-card p {
-            font-size: 13px;
-            color: var(--muted);
-            line-height: 1.55
-        }
-        /* ── BEFORE / AFTER ── */
-        .gallery {
-            background: var(--black)
-        }
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            border-radius: var(--r);
-            overflow: hidden;
-            margin-top: 36px
-        }
-        .ba-card {
-            position: relative;
-            aspect-ratio: 4/3;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: var(--r);
-            overflow: hidden;
-            cursor: pointer;
-            padding: 0;
-            margin: 0;
-            display: block;
-            width: 100%;
-            font: inherit;
-            color: inherit;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        .ba-img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .ba-after {
-            opacity: 0;
-            transition: opacity 500ms ease;
-        }
-        .ba-card:hover .ba-after,
-        .ba-card:focus-visible .ba-after,
-        .ba-card.is-revealed .ba-after {
-            opacity: 1;
-        }
-        .ba-tag-before,
-        .ba-tag-after {
-            transition: opacity 250ms ease;
-        }
-        .ba-tag-after {
-            opacity: 0;
-        }
-        .ba-card:hover .ba-tag-before,
-        .ba-card:focus-visible .ba-tag-before,
-        .ba-card.is-revealed .ba-tag-before {
-            opacity: 0;
-        }
-        .ba-card:hover .ba-tag-after,
-        .ba-card:focus-visible .ba-tag-after,
-        .ba-card.is-revealed .ba-tag-after {
-            opacity: 1;
-        }
-        .ba-hint {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            padding: 5px 10px;
-            background: rgba(12, 11, 8, 0.65);
-            color: rgba(242, 234, 214, 0.75);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            z-index: 3;
-            pointer-events: none;
-            transition: opacity 200ms ease;
-        }
-        .ba-card:hover .ba-hint,
-        .ba-card:focus-visible .ba-hint,
-        .ba-card.is-revealed .ba-hint {
-            opacity: 0;
-        }
-        .ba-card:focus-visible {
-            outline: 2px solid var(--amber);
-            outline-offset: 2px;
-        }
-        @media (max-width: 1024px) and (min-width: 769px) {
-            .gallery-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        .gallery-slot {
-            position: relative;
-            aspect-ratio: 4/3;
-            background: var(--panel);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            border: 1px dashed var(--border);
-            overflow: hidden
-        }
-        .gallery-slot-label {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 48px;
-            letter-spacing: 0.12em;
-            color: rgba(242, 234, 214, 0.07);
-            text-transform: uppercase;
-            line-height: 1;
-            text-align: center;
-            padding: 0 20px
-        }
-        .gallery-tag {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 14px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            padding: 5px 12px;
-            border-radius: 4px;
-            z-index: 2
-        }
-        .gallery-tag.before {
-            background: rgba(12, 11, 8, 0.7);
-            color: var(--muted);
-            border: 1px solid var(--border)
-        }
-        .gallery-tag.after {
-            background: var(--amber);
-            color: var(--black)
-        }
-        .gallery-placeholder-note {
-            font-size: 12px;
-            color: rgba(242, 234, 214, 0.18);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-weight: 600
-        }
-        /* ── TRUST / ABOUT ── */
-        .trust {
-            background: var(--dark)
-        }
-        .trust-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: start
-        }
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-top: 28px
-        }
-        .stat-box {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-top: 3px solid var(--amber);
-            border-radius: var(--r);
-            padding: 20px 16px;
-            text-align: center
-        }
-        .stat-box strong {
-            display: block;
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 48px;
-            letter-spacing: 0.04em;
-            color: var(--amber);
-            line-height: 1;
-            margin-bottom: 4px
-        }
-        .stat-box span {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--muted)
-        }
-        .about-right {
-            display: flex;
-            flex-direction: column;
-            gap: 32px
-        }
-        .promise-card {
-            background: rgba(61, 102, 40, 0.1);
-            border: 1px solid rgba(61, 102, 40, 0.3);
-            padding: 24px;
-            border-radius: var(--r);
-            position: relative
-        }
-        .promise-card::before {
-            content: "\"";
-            position: absolute;
-            top: -10px;
-            left: 20px;
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 64px;
-            color: var(--green-l);
-            line-height: 1;
-            opacity: 0.4
-        }
-        .promise-text {
-            font-style: italic;
-            font-size: 16px;
-            color: var(--cream);
-            margin-bottom: 12px;
-            line-height: 1.6
-        }
-        .promise-author {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--amber)
-        }
-        /* SERVICE AREAS */
-        .areas-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 24px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 24px;
-            border-radius: var(--r)
-        }
-        .map-svg {
-            width: 100%;
-            height: auto;
-            max-width: 140px;
-            margin: 0 auto;
-            opacity: 0.8;
-            fill: var(--green-l)
-        }
-        /* ── QUOTE ── */
-        .quote-section {
-            background: var(--black)
-        }
-        .quote-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 48px;
-            align-items: start
-        }
-        .quote-left h2 {
-            margin-bottom: 12px
-        }
-        .quote-left .section-body {
-            margin-bottom: 28px
-        }
-        .contact-methods {
-            display: grid;
-            gap: 10px
-        }
-        .contact-method {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--cream);
-            transition: border-color 0.15s
-        }
-        .contact-method:hover {
-            border-color: var(--amber);
-            color: var(--amber)
-        }
-        .contact-method svg {
-            flex-shrink: 0
-        }
-        .quote-form-wrap {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-top: 4px solid var(--amber);
-            border-radius: var(--r);
-            padding: 32px
-        }
-        .form-title {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 28px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--cream);
-            margin-bottom: 20px
-        }
-        .form-group {
-            margin-bottom: 14px
-        }
-        .form-group label {
-            display: block;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: var(--muted);
-            margin-bottom: 6px
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 12px 14px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--cream);
-            font-family: "Inter", sans-serif;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.15s, background 0.15s;
-            -webkit-appearance: none
-        }
-        .form-group input::placeholder {
-            color: rgba(242, 234, 214, 0.25)
-        }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            border-color: var(--amber);
-            background: rgba(255, 255, 255, 0.07)
-        }
-        .form-group select {
-            cursor: pointer
-        }
-        .form-group select option {
-            background: #1C1B16;
-            color: var(--cream)
-        }
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px
-        }
-        .form-submit {
-            width: 100%;
-            margin-top: 4px;
-            padding: 16px;
-            font-size: 18px
-        }
-        .form-note {
-            text-align: center;
-            font-size: 12px;
-            color: var(--muted);
-            margin-top: 10px
-        }
-        /* ── FOOTER ── */
-        footer {
-            background: var(--dark);
-            border-top: 2px solid var(--amber);
-            padding: 44px 0 36px
-        }
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr 1fr;
-            gap: 32px;
-            margin-bottom: 32px
-        }
-        .footer-name {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 24px;
-            letter-spacing: 0.1em;
-            color: var(--amber);
-            text-transform: uppercase;
-            margin-bottom: 8px
-        }
-        .footer-grid p, .footer-grid a, .footer-grid li {
-            font-size: 13px;
-            color: var(--muted);
-            line-height: 1.7
-        }
-        .footer-grid a:hover {
-            color: var(--amber)
-        }
-        .footer-grid ul {
-            list-style: none;
-            display: grid;
-            gap: 5px
-        }
-        .footer-col h5 {
-            font-family: "Bebas Neue", sans-serif;
-            font-size: 16px;
-            letter-spacing: 0.12em;
-            color: var(--cream);
-            text-transform: uppercase;
-            margin-bottom: 12px
-        }
-        .footer-bottom {
-            border-top: 1px solid var(--border);
-            padding-top: 20px;
-            font-size: 12px;
-            color: rgba(242, 234, 214, 0.25);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px
-        }
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1024px) {
-            .hero .wrap {
-                grid-template-columns: 1fr
-            }
-            .hero-card {
-                display: none
-            }
-            .trust-grid {
-                grid-template-columns: 1fr
-            }
-            .quote-grid {
-                grid-template-columns: 1fr
-            }
-            .footer-grid {
-                grid-template-columns: 1fr 1fr
-            }
-            nav ul {
-                display: none
-            }
-        }
-        @media (max-width: 768px) {
-            .services-grid {
-                grid-template-columns: repeat(2, 1fr)
-            }
-            .strip-grid {
-                grid-template-columns: repeat(2, 1fr)
-            }
-            .gallery-grid {
-                grid-template-columns: 1fr
-            }
-            .stats-row {
-                grid-template-columns: repeat(3, 1fr)
-            }
-            .footer-grid {
-                grid-template-columns: 1fr
-            }
-            .form-row {
-                grid-template-columns: 1fr
-            }
-            .areas-grid {
-                grid-template-columns: 1fr
-            }
-            .hero-overlay {
-                background: linear-gradient(180deg, rgba(12, 11, 8, 0.45) 0%, rgba(12, 11, 8, 0.15) 28%, rgba(12, 11, 8, 0.15) 52%, rgba(12, 11, 8, 0.7) 82%, rgba(12, 11, 8, 0.94) 100%);
-            }
-            .hero h1 {
-                font-size: clamp(52px, 11vw, 72px);
-                margin-bottom: 14px
-            }
-            .hero-sub {
-                font-size: 14px;
-                margin-bottom: 22px;
-                line-height: 1.55
-            }
-            .hero-actions .btn-lg {
-                padding: 11px 18px;
-                font-size: 14px
-            }
-        }
-        @media (max-width: 480px) {
-            .services-grid {
-                grid-template-columns: 1fr
-            }
-            .strip-grid {
-                grid-template-columns: 1fr
-            }
-            .stats-row {
-                grid-template-columns: repeat(3, 1fr)
-            }
-            .hero h1 {
-                font-size: 48px;
-                margin-bottom: 12px
-            }
-            .hero-sub {
-                font-size: 13px;
-                margin-bottom: 18px
-            }
-            .hero-actions {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 8px
-            }
-            .hero-actions .btn {
-                width: auto
-            }
-            .hero-actions .btn:first-child {
-                grid-column: 1 / -1
-            }
-            .hero-actions .btn-lg {
-                padding: 10px 14px;
-                font-size: 13px;
-                letter-spacing: 0.08em
-            }
-        }
-    </style>
-<style>
-        *, ::before, ::after {
-            --tw-border-spacing-x: 0;
-            --tw-border-spacing-y: 0;
-            --tw-translate-x: 0;
-            --tw-translate-y: 0;
-            --tw-rotate: 0;
-            --tw-skew-x: 0;
-            --tw-skew-y: 0;
-            --tw-scale-x: 1;
-            --tw-scale-y: 1;
-            --tw-pan-x: ;
-            --tw-pan-y: ;
-            --tw-pinch-zoom: ;
-            --tw-scroll-snap-strictness: proximity;
-            --tw-gradient-from-position: ;
-            --tw-gradient-via-position: ;
-            --tw-gradient-to-position: ;
-            --tw-ordinal: ;
-            --tw-slashed-zero: ;
-            --tw-numeric-figure: ;
-            --tw-numeric-spacing: ;
-            --tw-numeric-fraction: ;
-            --tw-ring-inset: ;
-            --tw-ring-offset-width: 0px;
-            --tw-ring-offset-color: #fff;
-            --tw-ring-color: rgb(59 130 246 / 0.5);
-            --tw-ring-offset-shadow: 0 0 #0000;
-            --tw-ring-shadow: 0 0 #0000;
-            --tw-shadow: 0 0 #0000;
-            --tw-shadow-colored: 0 0 #0000;
-            --tw-blur: ;
-            --tw-brightness: ;
-            --tw-contrast: ;
-            --tw-grayscale: ;
-            --tw-hue-rotate: ;
-            --tw-invert: ;
-            --tw-saturate: ;
-            --tw-sepia: ;
-            --tw-drop-shadow: ;
-            --tw-backdrop-blur: ;
-            --tw-backdrop-brightness: ;
-            --tw-backdrop-contrast: ;
-            --tw-backdrop-grayscale: ;
-            --tw-backdrop-hue-rotate: ;
-            --tw-backdrop-invert: ;
-            --tw-backdrop-opacity: ;
-            --tw-backdrop-saturate: ;
-            --tw-backdrop-sepia: ;
-            --tw-contain-size: ;
-            --tw-contain-layout: ;
-            --tw-contain-paint: ;
-            --tw-contain-style: 
-        }
-        /* ... existing utility styles ... */
-        .mt-1\.5 { margin-top: 0.375rem; }
-        .mt-12 { margin-top: 3rem; }
-        .flex { display: flex; }
-        .h-1\.5 { height: 0.375rem; }
-        .w-1\.5 { width: 0.375rem; }
-        .w-full { width: 100%; }
-        .shrink-0 { flex-shrink: 0; }
-        .items-start { align-items: flex-start; }
-        .items-center { align-items: center; }
-        .justify-center { justify-content: center; }
-        .gap-3 { gap: 0.75rem; }
-        .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; }
-        .rounded-full { border-radius: 9999px; }
-        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-    </style>
-</head><body>
-<!-- TOPBAR -->
-<div class="topbar">
-<div class="wrap">
-<div class="">Call or Text: <a class="" href="tel:19035679917">(903) 567-9917</a></div>
-<div>Canton, Texas · Serving East Texas &amp; Beyond</div>
-</div>
-</div>
-<!-- HEADER -->
-<header>
-<div class="wrap nav">
-<div class="logo">
-<div class="logo-mark">
-<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-  <!-- Wide spreading oak canopy silhouette -->
-  <path d="M18 3 C16 3 13 4 11 6 C9 4 6 5 5 7 C3 7 2 9 3 11 C1 12 1 15 3 16 C2 18 3 20 5 21 C5 23 7 24 9 23 C9 25 11 26 13 25 C14 27 16 27 18 26 C20 27 22 27 23 25 C25 26 27 25 27 23 C29 24 31 22 31 20 C33 19 34 16 32 15 C33 13 33 10 31 9 C30 7 28 6 26 7 C25 5 22 3 18 3Z" fill="#0C0B08"/>
-  <!-- Trunk -->
-  <rect x="16.5" y="24" width="3" height="8" rx="1" fill="#0C0B08"/>
-  <!-- 7 roots of varying lengths and angles -->
-  <path d="M17 31 Q11 32 7 35" stroke="#0C0B08" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-  <path d="M17.2 31.5 Q13 33.5 10 36" stroke="#0C0B08" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-  <path d="M17.5 32 Q15.5 34 14 36" stroke="#0C0B08" stroke-width="1.0" stroke-linecap="round" fill="none"/>
-  <path d="M18 32.5 Q18 34.5 18 36" stroke="#0C0B08" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-  <path d="M18.5 32 Q20.5 34 22 36" stroke="#0C0B08" stroke-width="1.0" stroke-linecap="round" fill="none"/>
-  <path d="M18.8 31.5 Q23 33.5 26 36" stroke="#0C0B08" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-  <path d="M19 31 Q25 32 29 35" stroke="#0C0B08" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-</svg>
-</div>
-<div class="logo-text">
-<div class="eyebrow">Canton, Texas</div>
-<div class="name">TX Mulching</div>
-</div>
-</div>
-<nav aria-label="Primary">
-<ul>
-<li><a href="#services">Services</a></li>
-<li><a href="#gallery">Before &amp; After</a></li>
-<li><a href="#trust">About</a></li>
-<li><a href="#quote">Get a Quote</a></li>
-</ul>
-</nav>
-<a class="btn btn-amber" href="#quote">Get a Quote</a>
-</div>
-</header>
-<main>
-<!-- HERO -->
-<section aria-label="Hero" class="hero">
-<div class="hero-bg">
-<div class="hero-image-container">
-<video class="hero-image" autoplay muted loop playsinline preload="metadata" poster="images/hero-poster.jpg" aria-label="TX Mulching equipment clearing brush">
-<source src="images/hero-loop.mp4" type="video/mp4"/>
-<img alt="Professional mulching results" src="images/hero-poster.jpg"/>
-</video>
-</div>
-<div class="hero-grain" style="z-index: 2;"></div>
-<div class="hero-overlay" style="z-index: 2;"></div>
-</div>
-<div class="hero-accent" style="z-index: 2;"></div>
-<div class="wrap">
-<div>
-<div class="hero-kicker-row">
-<div class="hero-kicker">Canton, TX · Forestry Mulching · Land Clearing</div>
-<div class="owner-badge">
-<span class="material-symbols-outlined">verified</span>
-                            Ownership Oversight
-</div>
-</div>
-<h1>You Own It.<br/><em>We Clear It.</em></h1>
-<p class="hero-sub">Owner-led land clearing out of Canton, Texas. Forestry mulching, brush removal, ROW cleanup, fence lines, trails, and more — done right, left clean.</p>
-<div class="hero-actions">
-<a class="btn btn-amber btn-lg" href="#quote">Get a Free Quote</a>
-<a class="btn btn-ghost btn-lg" href="tel:19035679917">Call (903) 567-9917</a>
-<a class="btn btn-ghost btn-lg" href="sms:19035679917">Text Us</a>
-</div>
-</div>
-<aside aria-label="Why TX Mulching" class="hero-card">
-<div class="hero-card-title">Why crews call us first</div>
-<ul>
-<li>
-<span class="check-icon"><svg fill="none" viewbox="0 0 10 8"><polyline points="1,4 4,7 9,1" stroke="#0C0B08" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg></span>
-                            9+ years of land clearing experience
-                        </li>
-<li>
-<span class="check-icon"><svg fill="none" viewbox="0 0 10 8"><polyline points="1,4 4,7 9,1" stroke="#0C0B08" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg></span>
-                            50+ years on heavy equipment
-                        </li>
-<li>
-<span class="check-icon"><svg fill="none" viewbox="0 0 10 8"><polyline points="1,4 4,7 9,1" stroke="#0C0B08" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg></span>
-                            Owner involved on every job
-</li>
-<li>
-<span class="check-icon"><svg fill="none" viewbox="0 0 10 8"><polyline points="1,4 4,7 9,1" stroke="#0C0B08" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg></span>
-                            Cleaner finish than cut-and-go operators
-                        </li>
-<li>
-<span class="check-icon"><svg fill="none" viewbox="0 0 10 8"><polyline points="1,4 4,7 9,1" stroke="#0C0B08" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></polyline></svg></span>
-                            Private, commercial &amp; government-ready
-                        </li>
-</ul>
-</aside>
-</div>
-</section>
-<!-- TRUST STRIP -->
-<div aria-label="Highlights" class="strip">
-<div class="wrap strip-grid">
-<div class="strip-item"><strong>Owner-Led Work</strong><span>Owner involved on every job. Always reachable.</span></div>
-<div class="strip-item"><strong>Heavy Equipment</strong><span>Built for dense brush and serious clearing work.</span></div>
-<div class="strip-item"><strong>Clean Finish</strong><span>We leave the ground usable, not just cleared.</span></div>
-<div class="strip-item"><strong>Straight Answers</strong><span>You'll always know where the job stands.</span></div>
-</div>
-</div>
-<!-- SERVICES -->
-<section class="services" id="services">
-<div class="wrap">
-<div class="services-intro">
-<div>
-<div class="eyebrow">What We Do</div>
-<h2 class="section-title">Every service.<br/>One crew.</h2>
-</div>
-<p class="section-body" style="margin-bottom:0;">From a single fence line to a multi-acre clearing job — if it grows in the way, we move it.</p>
-</div>
-<div class="services-grid">
-<!-- Forestry Mulching -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<polygon fill="none" points="18,4 8,18 28,18" stroke-linejoin="round" stroke-width="1.8"></polygon>
-<polygon fill="none" opacity=".5" points="18,9 6,22 30,22" stroke-linejoin="round" stroke-width="1.5"></polygon>
-<rect height="8" rx="1.5" stroke-width="1.6" width="6" x="15" y="22"></rect>
-<line stroke-linecap="round" stroke-width="1.6" x1="4" x2="32" y1="32" y2="32"></line>
-</svg>
-</div>
-<h3>Forestry Mulching</h3>
-<p>Efficient brush and tree reduction that leaves a clean, usable ground surface — no burn piles, no hauling.</p>
-</div>
-<!-- Land Clearing -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<rect height="8" rx="2" stroke-width="1.7" width="28" x="4" y="20"></rect>
-<circle cx="10" cy="28" fill="currentColor" r="3"></circle>
-<circle cx="26" cy="28" fill="currentColor" r="3"></circle>
-<path d="M8 20 L11 12 H25 L28 20" stroke-linejoin="round" stroke-width="1.7"></path>
-</svg>
-</div>
-<h3>Land Clearing</h3>
-<p>Clear ground for development, access, or long-term property use — handled with the right equipment.</p>
-</div>
-<!-- Brush Removal -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<path d="M6 28 Q8 18 13 20 Q16 14 19 19 Q22 12 26 22 Q30 18 32 26" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
-<line stroke-linecap="round" stroke-width="1.7" x1="4" x2="32" y1="28" y2="28"></line>
-</svg>
-</div>
-<h3>Brush Removal</h3>
-<p>Cut back overgrowth and thick underbrush that's eating up your usable land or blocking access.</p>
-</div>
-<!-- Fence Line Clearing -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<line stroke-linecap="round" stroke-width="1.7" x1="4" x2="32" y1="10" y2="10"></line>
-<line stroke-linecap="round" stroke-width="1.7" x1="10" x2="10" y1="6" y2="22"></line>
-<line stroke-linecap="round" stroke-width="1.7" x1="18" x2="18" y1="6" y2="22"></line>
-<line stroke-linecap="round" stroke-width="1.7" x1="26" x2="26" y1="6" y2="22"></line>
-</svg>
-</div>
-<h3>Fence Line Clearing</h3>
-<p>Open up property boundaries for visibility, maintenance access, and clean fence lines.</p>
-</div>
-<!-- Trail Cutting -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<path d="M4 30 Q8 22 13 25 Q18 16 22 20 Q27 12 32 16" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-<circle cx="4" cy="30" fill="currentColor" r="2.5"></circle>
-<circle cx="32" cy="16" fill="currentColor" r="2.5"></circle>
-</svg>
-</div>
-<h3>Trail Cutting</h3>
-<p>Open or recut internal trails for ranches, hunting land, and recreational use.</p>
-</div>
-<!-- Lot Clearing -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<rect height="20" rx="2" stroke-width="1.7" width="26" x="5" y="8"></rect>
-<line opacity=".45" stroke-width="1.3" x1="18" x2="18" y1="8" y2="28"></line>
-<circle cx="18" cy="4" fill="currentColor" r="2"></circle>
-</svg>
-</div>
-<h3>Lot Clearing</h3>
-<p>Prepare lots for homesites, development, or any project that needs a clean start.</p>
-</div>
-<!-- Right-of-Way -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<line stroke-linecap="round" stroke-width="2" x1="4" x2="32" y1="18" y2="18"></line>
-<polygon fill="currentColor" points="4,18 10,14 10,22"></polygon>
-<polygon fill="currentColor" points="32,18 26,14 26,22"></polygon>
-</svg>
-</div>
-<h3>ROW Clearing</h3>
-<p>Corridor clearing, road edges, utility lines, and public-sector right-of-way work.</p>
-</div>
-<!-- Pond & Access -->
-<div class="service-card">
-<div class="service-icon">
-<svg fill="none" viewbox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-<ellipse cx="18" cy="22" rx="11" ry="6" stroke-width="1.7"></ellipse>
-<path d="M7 22 Q7 12 18 9 Q29 12 29 22" fill="none" stroke-width="1.7"></path>
-<line stroke-width="1.5" x1="18" x2="18" y1="9" y2="14"></line>
-</svg>
-</div>
-<h3>Pond &amp; Access Cleanup</h3>
-<p>Open overgrown pond edges, entry points, and blocked internal access routes.</p>
-</div>
-</div>
-</div>
-</section>
-<!-- BEFORE / AFTER -->
-<section class="gallery" id="gallery">
-<div class="wrap">
-<div class="eyebrow">The Work</div>
-<h2 class="section-title">Before &amp; After</h2>
-<p class="section-body">Real jobs. Real results. The kind of finish you can walk on the same day.</p>
-<div class="gallery-grid">
-<button type="button" class="ba-card" aria-label="Reveal after image: pair 1">
-<img class="ba-img ba-before" src="images/before-1.jpg" alt="Dense brush before mulching" loading="lazy"/>
-<img class="ba-img ba-after" src="images/after-1.jpg" alt="Cleared and mulched ground after work" loading="lazy"/>
-<span class="gallery-tag before ba-tag-before">Before</span>
-<span class="gallery-tag after ba-tag-after">After</span>
-<span class="ba-hint">Hover &middot; Tap</span>
-</button>
-<button type="button" class="ba-card" aria-label="Reveal after image: pair 2">
-<img class="ba-img ba-before" src="images/before-2.jpg" alt="Overgrown land before mulching" loading="lazy"/>
-<img class="ba-img ba-after" src="images/after-2.jpg" alt="Finished mulched surface" loading="lazy"/>
-<span class="gallery-tag before ba-tag-before">Before</span>
-<span class="gallery-tag after ba-tag-after">After</span>
-<span class="ba-hint">Hover &middot; Tap</span>
-</button>
-<button type="button" class="ba-card" aria-label="Reveal after image: pair 3">
-<img class="ba-img ba-before" src="images/before-3.jpg" alt="Property before clearing" loading="lazy"/>
-<img class="ba-img ba-after" src="images/after-3.jpg" alt="Property after clearing and mulching" loading="lazy"/>
-<span class="gallery-tag before ba-tag-before">Before</span>
-<span class="gallery-tag after ba-tag-after">After</span>
-<span class="ba-hint">Hover &middot; Tap</span>
-</button>
-</div>
-</div>
-</section>
-<!-- TRUST / ABOUT -->
-<section class="trust" id="trust">
-<div class="wrap trust-grid">
-<div>
-<div class="eyebrow">About TX Mulching</div>
-<h2 class="section-title">Built for land that needs real work done.</h2>
-<p class="section-body">Not every contractor leaves a property cleaner than they found it. TX Mulching runs every job with direct owner involvement, the right equipment for the conditions, and the discipline to finish the way it should be finished.</p>
-<div class="stats-row">
-<div class="stat-box"><strong>9+</strong><span>Years land clearing</span></div>
-<div class="stat-box"><strong>50+</strong><span>Yrs heavy equipment</span></div>
-<div class="stat-box"><strong>1</strong><span>Owner, every project</span></div>
-</div>
-<div class="mt-12">
-<div class="eyebrow" style="font-size: 10px; margin-bottom: 12px;">Where We Work</div>
-<div class="areas-grid" style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 32px; background: var(--panel); border: 1px solid var(--border); padding: 32px; border-radius: var(--r); align-items: center;">
-<div>
-<p style="font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 32ch;">Performing mulching by controlling underbrush and other invasive species as a tool on projects across various acreages in Texas</p>
-</div>
-<div class="flex items-center justify-center">
-<svg class="map-svg w-full" style="max-width: 100%; height: auto; display: block;" viewbox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-<path d="M50,40 L120,40 L130,10 L180,10 L200,60 L280,60 L280,180 L230,260 L180,270 L140,240 L80,240 L40,180 L40,80 Z" fill="none" opacity="0.3" stroke="var(--border)" stroke-width="1"></path>
-<circle cx="175" cy="115" fill="var(--amber)" opacity="0.15" r="80" stroke="var(--amber)" stroke-width="1"></circle>
-<circle cx="110" cy="140" fill="var(--muted)" r="2.5"></circle>
-<text fill="var(--muted)" font-family="Inter" font-size="7" font-weight="600" x="80" y="145">LAMPASAS</text>
-<circle cx="230" cy="100" fill="var(--muted)" r="2.5"></circle>
-<text fill="var(--muted)" font-family="Inter" font-size="7" font-weight="600" x="235" y="105">LONGVIEW</text>
-<circle cx="195" cy="220" fill="var(--muted)" r="2.5"></circle>
-<text fill="var(--muted)" font-family="Inter" font-size="7" font-weight="600" x="200" y="230">HOUSTON</text>
-<circle cx="175" cy="115" fill="var(--amber)" r="4"></circle>
-<circle cx="175" cy="115" fill="none" r="6" stroke="var(--amber)" stroke-width="1">
-<animate attributename="r" dur="2s" from="4" repeatcount="indefinite" to="10"></animate>
-<animate attributename="opacity" dur="2s" from="1" repeatcount="indefinite" to="0"></animate>
-</circle>
-<text fill="var(--amber)" font-family="Bebas Neue" font-size="12" letter-spacing="0.05em" x="160" y="105">CANTON</text>
-<text fill="var(--amber)" font-family="Inter" font-size="6" font-weight="700" x="155" y="130">HOME BASE</text>
-</svg>
-</div>
-</div>
-</div>
-</div>
-<div class="about-right">
-<div class="promise-card">
-<p class="promise-text">"When I'm on your property, I treat it like my own. I don't just clear the brush; I make sure the ground is finished so you can actually use the land the same day we leave. That's my promise to every client."</p>
-<div class="promise-author">— The Owner's Commitment</div>
-</div>
-<div class="trust-checks space-y-3">
-<div class="flex items-start gap-3 text-sm text-muted"><span class="w-1.5 h-1.5 rounded-full bg-amber mt-1.5 shrink-0"></span>Heavy equipment for serious clearing — not light-duty machines</div>
-<div class="flex items-start gap-3 text-sm text-muted"><span class="w-1.5 h-1.5 rounded-full bg-amber mt-1.5 shrink-0"></span>Owner involved on every job, no subcontracting surprises</div>
-<div class="flex items-start gap-3 text-sm text-muted"><span class="w-1.5 h-1.5 rounded-full bg-amber mt-1.5 shrink-0"></span>Cleaner ground finish than cut-and-go operators leave behind</div>
-<div class="flex items-start gap-3 text-sm text-muted"><span class="w-1.5 h-1.5 rounded-full bg-amber mt-1.5 shrink-0"></span>Fast execution with honest, straight-forward communication</div>
-<div class="flex items-start gap-3 text-sm text-muted"><span class="w-1.5 h-1.5 rounded-full bg-amber mt-1.5 shrink-0"></span>Private, commercial, and government work — all welcome</div>
-<div class="flex items-start gap-3 text-sm text-muted"><span class="w-1.5 h-1.5 rounded-full bg-amber mt-1.5 shrink-0"></span>East Texas home base, open to select statewide projects</div>
-</div>
-</div>
-</div>
-</section>
-<!-- QUOTE -->
-<section class="quote-section" id="quote">
-<div class="wrap quote-grid">
-<div class="quote-left">
-<div class="eyebrow">Get a Quote</div>
-<h2 class="section-title">Tell us about the job.</h2>
-<p class="section-body">Give us your name, number, and what you're working with. We'll take it from there. No long forms, no runaround.</p>
-<div class="contact-methods">
-<a class="contact-method" href="tel:19035679917">
-<svg fill="none" height="18" viewbox="0 0 18 18" width="18"><path d="M3 2h4l1.5 4-2 1.5C7.5 10 8 11 10.5 13.5l1.5-2L16 13v4a1 1 0 0 1-1 1C6 17 1 12 1 3a1 1 0 0 1 1-1h1z" stroke="#E89A0A" stroke-linejoin="round" stroke-width="1.6"></path></svg>
-                            Call (903) 567-9917
-                        </a>
-<a class="contact-method" href="sms:19035679917">
-<svg fill="none" height="18" viewbox="0 0 18 18" width="18"><rect height="10" rx="2" stroke="#E89A0A" stroke-width="1.6" width="14" x="2" y="3"></rect><path d="M6 16l3-3h5" stroke="#E89A0A" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"></path></svg>
-                            Text (903) 567-9917
-                        </a>
-</div>
-</div>
-<div class="quote-form-wrap">
-<div class="form-title">Request a Free Quote</div>
-
-<div id="formSuccess" style="display:none; text-align:center; padding:40px 20px;">
-  <div style="font-size:48px; margin-bottom:16px;">&#10003;</div>
-  <div style="font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:0.06em; color:var(--amber); margin-bottom:10px;">Quote Request Sent</div>
-  <p style="color:var(--muted); font-size:14px;">We'll be in touch shortly. You can also reach us directly at (903) 567-9917.</p>
-</div>
-
-<form id="quoteForm">
-  <div class="form-group">
-    <label for="name">Your Name *</label>
-    <input type="text" id="name" name="name" placeholder="John Smith" required />
-  </div>
-  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--muted); margin-bottom:8px;">Phone or Email — at least one required</div>
-  <div class="form-row">
-    <div class="form-group">
-      <label for="phone">Phone Number</label>
-      <input type="tel" id="phone" name="phone" placeholder="(903) 555-0100" />
-    </div>
-    <div class="form-group">
-      <label for="email">Email Address</label>
-      <input type="email" id="email" name="email" placeholder="you@email.com" />
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label for="zipcode">Zip Code</label>
-      <input type="text" id="zipcode" name="zipcode" placeholder="e.g. 75103" />
-    </div>
-    <div class="form-group">
-      <label for="acreage">Estimated Acreage</label>
-      <input type="text" id="acreage" name="acreage" placeholder="e.g. 10 acres" />
-    </div>
-  </div>
-  <div class="form-group">
-    <label for="serviceType">Service Needed</label>
-    <select id="serviceType" name="serviceType">
-      <option value="" disabled selected>Select a service...</option>
-      <option value="Forestry Mulching">Forestry Mulching</option>
-      <option value="Land Clearing">Land Clearing</option>
-      <option value="Brush Removal">Brush Removal</option>
-      <option value="Fence Line Clearing">Fence Line Clearing</option>
-      <option value="Trail Cutting">Trail Cutting</option>
-      <option value="Lot Clearing">Lot Clearing</option>
-      <option value="Right-of-Way Clearing">Right-of-Way Clearing</option>
-      <option value="Pond &amp; Access Cleanup">Pond &amp; Access Cleanup</option>
-      <option value="Not Sure">Not Sure / Multiple</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label for="description">Tell us about the job</label>
-    <textarea id="description" name="description" placeholder="Describe the land, conditions, timing requirements, or anything else helpful..."></textarea>
-  </div>
-  <button type="submit" class="btn btn-amber form-submit" id="submitBtn">Get My Free Quote</button>
-  <p class="form-note">No obligation. We'll review your project and follow up directly.</p>
-  <p id="formError" style="display:none; text-align:center; font-size:13px; color:#E85D24; margin-top:10px;">Something went wrong. Please try again or call us at (903) 567-9917.</p>
-</form>
-</div>
-</div>
-</section>
-
-<script>
-document.getElementById('quoteForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  var btn = document.getElementById('submitBtn');
-  btn.textContent = 'Sending...';
-  btn.disabled = true;
-  document.getElementById('formError').style.display = 'none';
-
-  var phone = document.getElementById('phone').value.trim();
-  var email = document.getElementById('email').value.trim();
-  if (!phone && !email) {
-    btn.textContent = 'Get My Free Quote';
-    btn.disabled = false;
-    var err = document.getElementById('formError');
-    err.textContent = 'Please provide at least a phone number or email address.';
-    err.style.display = 'block';
-    return;
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TX Mulching | Forestry Mulching & Land Clearing in Canton, TX</title>
+  <meta name="description" content="TX Mulching provides owner-led forestry mulching, land clearing, brush removal, fence-line clearing, ROW cleanup and more from Canton, Texas. Request a free quote.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="theme-color" content="#0c0b08">
+  <link rel="canonical" href="https://txmulching.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TX Mulching">
+  <meta property="og:title" content="TX Mulching | Forestry Mulching & Land Clearing">
+  <meta property="og:description" content="Owner-led land clearing from Canton, Texas. Forestry mulching, brush removal, ROW cleanup, fence lines, trails and more.">
+  <meta property="og:url" content="https://txmulching.com/">
+  <meta property="og:image" content="https://txmulching.com/images/hero-poster.jpg">
+  <meta property="og:image:alt" content="TX Mulching equipment clearing brush in East Texas">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TX Mulching | Forestry Mulching & Land Clearing">
+  <meta name="twitter:description" content="Owner-led forestry mulching and land clearing from Canton, Texas.">
+  <meta name="twitter:image" content="https://txmulching.com/images/hero-poster.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/script.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://txmulching.com/#business",
+    "name": "TX Mulching, LLC",
+    "url": "https://txmulching.com/",
+    "telephone": "+1-903-567-9917",
+    "image": "https://txmulching.com/images/hero-poster.jpg",
+    "description": "Owner-led forestry mulching, land clearing, brush removal, fence-line clearing, trail cutting, lot clearing, right-of-way clearing, and pond and access cleanup.",
+    "address": {"@type": "PostalAddress", "addressLocality": "Canton", "addressRegion": "TX", "addressCountry": "US"},
+    "areaServed": [{"@type": "State", "name": "Texas"}, {"@type": "AdministrativeArea", "name": "East Texas"}],
+    "slogan": "You Own It. We Clear It.",
+    "knowsAbout": ["Forestry mulching", "Land clearing", "Brush removal", "Fence-line clearing", "Trail cutting", "Lot clearing", "Right-of-way clearing", "Pond and access cleanup"],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Land Clearing Services",
+      "itemListElement": [
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Forestry Mulching"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Land Clearing"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Brush Removal"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Fence-Line Clearing"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Trail Cutting"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Lot Clearing"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Right-of-Way Clearing"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Pond and Access Cleanup"}}
+      ]
+    }
   }
-
-  var payload = {
-    name:        document.getElementById('name').value,
-    phone:       phone,
-    email:       email,
-    zipcode:     document.getElementById('zipcode').value,
-
-    acreage:     document.getElementById('acreage').value,
-    serviceType: document.getElementById('serviceType').value,
-    description: document.getElementById('description').value
-  };
-
-  fetch('https://script.google.com/macros/s/AKfycbz4cvrrOyvDmg9pZnd2Qi3MWoREjIXjvPfjkKx_ED_lXNOZdUo5MFmS0Z7A3gnjtKEi/exec', {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
-  .then(function() {
-    document.getElementById('quoteForm').style.display = 'none';
-    document.getElementById('formSuccess').style.display = 'block';
-  })
-  .catch(function() {
-    btn.textContent = 'Get My Free Quote';
-    btn.disabled = false;
-    document.getElementById('formError').style.display = 'block';
-  });
-});
-
-document.querySelectorAll('.ba-card').forEach(function(card) {
-  card.addEventListener('click', function() {
-    card.classList.toggle('is-revealed');
-  });
-});
-
-if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  document.querySelectorAll('video.hero-image').forEach(function(v) {
-    v.removeAttribute('autoplay');
-    v.pause();
-  });
-}
-</script>
-
-</main>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"a205dd3ff9464a07b4b13d7ccdc7284a","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="topbar">
+    <div class="wrap topbar-inner">
+      <div>Call or Text: <a href="tel:+19035679917">(903) 567-9917</a></div>
+      <div>Canton, Texas · Serving East Texas & Beyond</div>
+    </div>
+  </div>
+  <header class="site-header" id="site-header">
+    <div class="wrap nav-shell">
+      <a class="logo" href="#top" aria-label="TX Mulching home">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 36 36" role="img">
+            <path d="M18 3c-2 0-5 1-7 3-2-2-5-1-6 1-2 0-3 2-2 4-2 1-2 4 0 5-1 2 0 4 2 5 0 2 2 3 4 2 0 2 2 3 4 2 1 2 3 2 5 1 2 1 4 1 5-1 2 1 4 0 4-2 2 1 4-1 4-3 2-1 3-4 1-5 1-2-1-5-3-6-1-2-3-3-5-2-2-2-4-2-7-2z" fill="currentColor"/>
+            <rect x="16.5" y="24" width="3" height="8" rx="1" fill="currentColor"/>
+            <path d="M17 31Q11 32 7 35m10.2-3.5Q13 33.5 10 36m7.5-4Q15.5 34 14 36m4-3.5V36m.5-4Q20.5 34 22 36m-3.2-4.5Q23 33.5 26 36M19 31q6 1 10 4" fill="none" stroke="currentColor" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="logo-copy"><span class="logo-eyebrow">Canton, Texas</span><span class="logo-name">TX Mulching</span></span>
+      </a>
+      <button class="menu-button" id="menu-button" type="button" aria-expanded="false" aria-controls="primary-navigation">
+        <span class="sr-only">Open navigation menu</span><span class="menu-line"></span><span class="menu-line"></span><span class="menu-line"></span>
+      </button>
+      <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">
+        <ul><li><a href="#services">Services</a></li><li><a href="#gallery">Before & After</a></li><li><a href="#about">About</a></li><li><a href="#quote">Get a Quote</a></li></ul>
+      </nav>
+      <a class="button button-primary header-quote" href="#quote">Get a Quote</a>
+    </div>
+  </header>
+  <main id="main-content">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-media" aria-hidden="true"><video autoplay muted loop playsinline preload="metadata" poster="/images/hero-poster.jpg"><source src="/images/hero-loop.mp4" type="video/mp4"></video></div>
+      <div class="hero-overlay"></div>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="hero-badges"><span class="kicker">Canton, TX · Forestry Mulching · Land Clearing</span><span class="owner-badge">Owner Oversight</span></div>
+          <h1 id="hero-title">You Own It.<br><em>We Clear It.</em></h1>
+          <p>Owner-led land clearing out of Canton, Texas. Forestry mulching, brush removal, ROW cleanup, fence lines, trails and more—done right and left clean.</p>
+          <div class="hero-actions"><a class="button button-primary button-large" href="#quote">Get a Free Quote</a><a class="button button-secondary button-large" href="tel:+19035679917">Call (903) 567-9917</a><a class="button button-secondary button-large" href="sms:+19035679917">Text Us</a></div>
+        </div>
+        <aside class="hero-card" aria-label="Why choose TX Mulching">
+          <h2>Why crews call us first</h2>
+          <ul class="check-list"><li>9+ years of land-clearing experience</li><li>50+ years operating heavy equipment</li><li>Owner involved on every job</li><li>Cleaner finish than cut-and-go operators</li><li>Private, commercial and government-ready</li></ul>
+        </aside>
+      </div>
+    </section>
+    <section class="trust-strip" aria-label="TX Mulching highlights"><div class="wrap trust-strip-grid"><div><strong>Owner-Led Work</strong><span>Owner involved on every job.</span></div><div><strong>Heavy Equipment</strong><span>Built for serious clearing work.</span></div><div><strong>Clean Finish</strong><span>Ground left usable, not merely cut.</span></div><div><strong>Straight Answers</strong><span>Clear communication from start to finish.</span></div></div></section>
+    <section class="section services-section" id="services" aria-labelledby="services-title">
+      <div class="wrap">
+        <div class="section-intro split-intro"><div><p class="eyebrow">What We Do</p><h2 id="services-title">Every service.<br>One crew.</h2></div><p>From a single fence line to a multi-acre clearing job—if it grows in the way, we move it.</p></div>
+        <div class="services-grid">
+          <article class="service-card"><span class="service-number">01</span><h3>Forestry Mulching</h3><p>Efficient brush and tree reduction that leaves a clean, usable ground surface—without burn piles or unnecessary hauling.</p></article>
+          <article class="service-card"><span class="service-number">02</span><h3>Land Clearing</h3><p>Clear ground for development, access or long-term property use with equipment suited to the conditions.</p></article>
+          <article class="service-card"><span class="service-number">03</span><h3>Brush Removal</h3><p>Cut back overgrowth and thick underbrush that is consuming usable land or blocking access.</p></article>
+          <article class="service-card"><span class="service-number">04</span><h3>Fence-Line Clearing</h3><p>Open property boundaries for visibility, maintenance access and clean fence lines.</p></article>
+          <article class="service-card"><span class="service-number">05</span><h3>Trail Cutting</h3><p>Open or recut internal trails for ranches, hunting land and recreational use.</p></article>
+          <article class="service-card"><span class="service-number">06</span><h3>Lot Clearing</h3><p>Prepare lots for homesites, development or any project that needs a clean start.</p></article>
+          <article class="service-card"><span class="service-number">07</span><h3>ROW Clearing</h3><p>Corridor clearing, road edges, utility lines and public-sector right-of-way work.</p></article>
+          <article class="service-card"><span class="service-number">08</span><h3>Pond & Access Cleanup</h3><p>Open overgrown pond edges, entry points and blocked internal access routes.</p></article>
+        </div>
+      </div>
+    </section>
+    <section class="section gallery-section" id="gallery" aria-labelledby="gallery-title">
+      <div class="wrap">
+        <div class="section-intro"><p class="eyebrow">The Work</p><h2 id="gallery-title">Before & After</h2><p>Real jobs. Real results. The kind of finish you can walk on the same day.</p></div>
+        <div class="gallery-grid">
+          <button type="button" class="before-after" aria-label="Show completed result for project one" aria-pressed="false"><img class="before-image" src="/images/before-1.jpg" alt="Dense brush before forestry mulching" loading="lazy" width="1200" height="900"><img class="after-image" src="/images/after-1.jpg" alt="Cleared and mulched ground after TX Mulching completed the work" loading="lazy" width="1200" height="900"><span class="image-tag tag-before">Before</span><span class="image-tag tag-after">After</span><span class="reveal-hint">Hover · Tap</span></button>
+          <button type="button" class="before-after" aria-label="Show completed result for project two" aria-pressed="false"><img class="before-image" src="/images/before-2.jpg" alt="Overgrown land before clearing" loading="lazy" width="1200" height="900"><img class="after-image" src="/images/after-2.jpg" alt="Finished mulched surface after clearing" loading="lazy" width="1200" height="900"><span class="image-tag tag-before">Before</span><span class="image-tag tag-after">After</span><span class="reveal-hint">Hover · Tap</span></button>
+          <button type="button" class="before-after" aria-label="Show completed result for project three" aria-pressed="false"><img class="before-image" src="/images/before-3.jpg" alt="Property before land clearing" loading="lazy" width="1200" height="900"><img class="after-image" src="/images/after-3.jpg" alt="Property after clearing and mulching" loading="lazy" width="1200" height="900"><span class="image-tag tag-before">Before</span><span class="image-tag tag-after">After</span><span class="reveal-hint">Hover · Tap</span></button>
+        </div>
+      </div>
+    </section>
+    <section class="section about-section" id="about" aria-labelledby="about-title">
+      <div class="wrap about-grid">
+        <div>
+          <p class="eyebrow">About TX Mulching</p><h2 id="about-title">Built for land that needs real work done.</h2><p class="section-copy">TX Mulching runs every job with direct owner involvement, the right equipment for the conditions and the discipline to finish the way it should be finished.</p>
+          <div class="stats-grid" aria-label="Company experience"><div><strong>9+</strong><span>Years land clearing</span></div><div><strong>50+</strong><span>Years heavy equipment</span></div><div><strong>1</strong><span>Owner, every project</span></div></div>
+          <div class="service-area-card"><div><p class="eyebrow">Where We Work</p><h3>East Texas home base. Select statewide projects.</h3><p>Based in Canton and equipped to perform mulching and underbrush control across a range of Texas properties and acreages.</p></div><div class="map" aria-label="Service area centered on Canton, Texas"><svg viewBox="0 0 300 280" role="img" aria-labelledby="map-title map-desc"><title id="map-title">TX Mulching service area</title><desc id="map-desc">Texas service map with Canton marked as the home base.</desc><path d="M50 40h70l10-30h50l20 50h80v120l-50 80-50 10-40-30H80l-40-60V80z" fill="none" stroke="currentColor" opacity=".35"/><circle cx="175" cy="115" r="70" fill="currentColor" opacity=".08"/><circle cx="175" cy="115" r="5" fill="currentColor"/><text x="150" y="100">CANTON</text><text x="151" y="135" class="small-map-text">HOME BASE</text></svg></div></div>
+        </div>
+        <div class="about-right"><blockquote><p>“When I’m on your property, I treat it like my own. I don’t just clear the brush; I make sure the ground is finished so you can actually use the land the same day we leave.”</p><cite>— The Owner’s Commitment</cite></blockquote><ul class="check-list large-list"><li>Heavy equipment for serious clearing—not light-duty machines</li><li>Owner involved on every job, with no subcontracting surprises</li><li>Cleaner ground finish than cut-and-go operators leave behind</li><li>Fast execution with straightforward communication</li><li>Private, commercial and government work welcome</li><li>East Texas home base with select statewide availability</li></ul></div>
+      </div>
+    </section>
+    <section class="section quote-section" id="quote" aria-labelledby="quote-title">
+      <div class="wrap quote-grid">
+        <div><p class="eyebrow">Get a Quote</p><h2 id="quote-title">Tell us about the job.</h2><p class="section-copy">Give us your name, a way to reach you and a few details about the property. We will review it and follow up directly.</p><div class="contact-links"><a href="tel:+19035679917"><span aria-hidden="true">☎</span> Call (903) 567-9917</a><a href="sms:+19035679917"><span aria-hidden="true">✉</span> Text (903) 567-9917</a></div></div>
+        <div class="form-card">
+          <div id="form-success" class="form-status form-success" role="status" aria-live="polite" tabindex="-1" hidden><span class="status-icon" aria-hidden="true">✓</span><h3>Quote Request Sent</h3><p>We received your information and will follow up directly.</p></div>
+          <form id="quote-form" novalidate>
+            <h3>Request a Free Quote</h3><input type="hidden" id="form-started-at" name="formStartedAt" value="">
+            <div class="honeypot" aria-hidden="true"><label for="website">Leave this field blank</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
+            <div class="field"><label for="name">Your Name <span aria-hidden="true">*</span></label><input id="name" name="name" type="text" autocomplete="name" maxlength="80" required></div>
+            <p class="field-help">Provide at least one: phone number or email address.</p>
+            <div class="field-row"><div class="field"><label for="phone">Phone Number</label><input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="(903) 555-0100"></div><div class="field"><label for="email">Email Address</label><input id="email" name="email" type="email" autocomplete="email" maxlength="120" placeholder="you@example.com"></div></div>
+            <div class="field-row"><div class="field"><label for="zipcode">ZIP Code</label><input id="zipcode" name="zipcode" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="10" placeholder="75103"></div><div class="field"><label for="acreage">Estimated Acreage</label><input id="acreage" name="acreage" type="text" maxlength="40" placeholder="10 acres"></div></div>
+            <div class="field"><label for="service-type">Service Needed</label><select id="service-type" name="serviceType"><option value="">Select a service…</option><option>Forestry Mulching</option><option>Land Clearing</option><option>Brush Removal</option><option>Fence-Line Clearing</option><option>Trail Cutting</option><option>Lot Clearing</option><option>Right-of-Way Clearing</option><option>Pond & Access Cleanup</option><option>Not Sure / Multiple</option></select></div>
+            <div class="field"><label for="description">Tell us about the job</label><textarea id="description" name="description" maxlength="1500" rows="5" placeholder="Describe the land, conditions, timing or anything else that would help us understand the work."></textarea></div>
+            <button class="button button-primary form-submit" id="submit-button" type="submit">Get My Free Quote</button><p class="form-note">No obligation. Your information is used only to respond to this request.</p><div id="form-error" class="form-status form-error" role="alert" aria-live="assertive" tabindex="-1" hidden></div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="wrap footer-grid"><div><a class="footer-brand" href="#top">TX Mulching</a><p>Owner-led forestry mulching and land clearing from Canton, Texas.</p></div><div><h2>Services</h2><ul><li><a href="#services">Forestry Mulching</a></li><li><a href="#services">Land Clearing</a></li><li><a href="#services">Brush Removal</a></li><li><a href="#services">ROW Clearing</a></li></ul></div><div><h2>Contact</h2><ul><li><a href="tel:+19035679917">(903) 567-9917</a></li><li><a href="sms:+19035679917">Send a Text</a></li><li><a href="#quote">Request a Quote</a></li><li><a href="/privacy.html">Privacy</a></li></ul></div></div>
+    <div class="wrap footer-bottom"><span>© <span id="current-year">2026</span> TX Mulching, LLC. All rights reserved.</span><span>Canton, Texas</span></div>
+  </footer>
 </body>
 </html>

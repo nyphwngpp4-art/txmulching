@@ -8,7 +8,8 @@
   "experience": {
     "landClearingYears": "9+",
     "heavyEquipmentYears": "50+",
-    "ownerInvolvedEveryProject": true
+    "ownerInvolvedEveryProject": true,
+    "tpwdContractDays": "250+"
   },
   "services": [
     "Forestry Mulching",
@@ -21,9 +22,11 @@
     "Pond and Access Cleanup"
   ],
   "positioning": [
+    "Heavy timber & large-acreage specialists",
+    "High-horsepower purpose-built forestry machine",
     "Owner-led work",
-    "Heavy equipment for serious clearing",
     "Clean, usable finish",
     "Private, commercial and government-ready"
-  ]
+  ],
+  "instantEstimateUrl": "https://txmulching.com/estimate"
 }

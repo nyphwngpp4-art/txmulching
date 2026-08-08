@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Instant Estimate | TX Mulching — Heavy Forestry Mulching, Canton TX</title>
+  <meta name="description" content="Get an instant price range for heavy forestry mulching and land clearing in East Texas. Three questions, thirty seconds — TX Mulching, Canton TX.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0c0b08">
+  <link rel="canonical" href="https://txmulching.com/estimate">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TX Mulching">
+  <meta property="og:title" content="Instant Clearing Estimate | TX Mulching">
+  <meta property="og:description" content="Thick timber, dense brush, big acreage — get a real price range right now.">
+  <meta property="og:url" content="https://txmulching.com/estimate">
+  <meta property="og:image" content="https://txmulching.com/images/hero-poster.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/estimate.js" defer></script>
+  <style>
+    :root{
+      --black:#0c0b08; --dark:#141410; --panel:#1c1b16; --border:#343127;
+      --amber:#e89a0a; --amber-light:#f5b830; --green:#3d6628;
+      --cream:#f2ead6; --muted:rgba(242,234,214,.68); --radius:10px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--black);color:var(--cream);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+    .topbar{border-bottom:1px solid var(--border);background:var(--dark)}
+    .topbar-inner{max-width:680px;margin:0 auto;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+    .topbar a{color:var(--cream);text-decoration:none;font-weight:600}
+    .topbar a.home{color:var(--muted);font-weight:500}
+    .topbar a:hover{color:var(--amber-light)}
+    .wrap{max-width:680px;margin:0 auto;padding:32px 18px 60px}
+    .kicker{font-family:'Bebas Neue',sans-serif;color:var(--amber);letter-spacing:.18em;font-size:15px}
+    h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,7vw,52px);line-height:.95;letter-spacing:.01em;margin:6px 0 10px}
+    .sub{color:var(--muted);font-size:14.5px;line-height:1.55;max-width:52ch}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-top:22px}
+    label.f{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+    label.f:first-child{margin-top:0}
+    input[type=number],input[type=text],input[type=tel],select{
+      width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;
+      color:var(--cream);font:600 16px 'Inter',sans-serif;padding:12px 14px;outline:none}
+    input:focus,select:focus{border-color:var(--amber)}
+    .dens{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .dens button{
+      text-align:left;background:var(--dark);border:1px solid var(--border);border-radius:8px;
+      padding:12px 12px;color:var(--cream);cursor:pointer;font-family:'Inter',sans-serif}
+    .dens button.on{border-color:var(--amber);background:rgba(232,154,10,.08)}
+    .dens .t{font-weight:700;font-size:14.5px}
+    .dens button.on .t{color:var(--amber-light)}
+    .dens .d{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+    .cta{display:block;width:100%;margin-top:22px;background:var(--amber);color:var(--black);
+      border:0;border-radius:8px;padding:15px;font:700 16px 'Inter',sans-serif;cursor:pointer;letter-spacing:.02em}
+    .cta:hover{background:var(--amber-light)}
+    .fine{font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+    .hide{display:none}
+    .hp{position:absolute;left:-9999px;top:-9999px}
+    .range{font-family:'Bebas Neue',sans-serif;font-size:clamp(38px,9vw,58px);color:var(--amber-light);line-height:1;margin:6px 0 2px}
+    .per{color:var(--muted);font-size:13.5px;line-height:1.5}
+    .row{display:flex;justify-content:space-between;font-size:14px;padding:9px 0;border-bottom:1px solid var(--border)}
+    .row:last-child{border-bottom:0}
+    .row span:last-child{font-weight:600}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+    .actions a{display:block;text-align:center;text-decoration:none;border-radius:8px;padding:14px;font-weight:700;font-size:15px}
+    .call{background:var(--amber);color:var(--black)}
+    .txt{background:transparent;color:var(--cream);border:1px solid var(--border)}
+    .badge{display:inline-block;background:rgba(61,102,40,.25);border:1px solid var(--green);
+      color:#b8d89f;font-size:11.5px;font-weight:600;border-radius:99px;padding:4px 11px;margin-top:14px}
+    .steps{display:flex;gap:8px;margin-top:20px}
+    .steps i{height:3px;flex:1;background:var(--border);border-radius:2px}
+    .steps i.on{background:var(--amber)}
+    @media(max-width:420px){.dens{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="home" href="/">&larr; TX Mulching</a>
+      <a href="tel:+19035679917">(903) 567-9917</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="kicker">TX MULCHING &middot; CANTON, TX &middot; HEAVY CLEARING SPECIALISTS</div>
+    <h1>Instant Clearing<br>Estimate</h1>
+    <p class="sub">Thick timber, dense brush, big acreage &mdash; the jobs that stall smaller machines are the ones we're built for. Answer three quick questions and get a real price range right now.</p>
+
+    <div class="steps"><i id="s1" class="on"></i><i id="s2"></i><i id="s3"></i></div>
+
+    <div class="card" id="step1">
+      <label class="f" for="acres">How many acres need clearing?</label>
+      <input type="number" id="acres" min="0.5" step="0.5" value="5" inputmode="decimal">
+
+      <label class="f">How thick is the brush?</label>
+      <div class="dens" id="dens"></div>
+
+      <label class="f" for="zone">Where's the property?</label>
+      <select id="zone">
+        <option value="near">Within ~40 miles of Canton (Van Zandt &amp; neighbors)</option>
+        <option value="mid">40&ndash;90 miles (greater East Texas / DFW east side)</option>
+        <option value="far">90+ miles (statewide &mdash; larger jobs)</option>
+      </select>
+
+      <button class="cta" id="toStep2" type="button">See My Estimate &rarr;</button>
+      <p class="fine">Takes 30 seconds. No obligation.</p>
+    </div>
+
+    <div class="card hide" id="step2">
+      <div class="hp" aria-hidden="true"><label for="website">Leave this field blank</label><input type="text" id="website" tabindex="-1" autocomplete="off"></div>
+      <label class="f" for="name">Your name</label>
+      <input type="text" id="name" autocomplete="name" placeholder="First name is fine" maxlength="80">
+      <label class="f" for="phone">Phone (we'll text your estimate too)</label>
+      <input type="tel" id="phone" autocomplete="tel" inputmode="tel" placeholder="(903) 555-0123" maxlength="30">
+      <button class="cta" id="toStep3" type="button">Show My Price Range</button>
+      <p class="fine">We only use this to follow up on your estimate. No spam, no lists.</p>
+    </div>
+
+    <div class="card hide" id="step3">
+      <div class="kicker" style="font-size:13px">YOUR ESTIMATED RANGE</div>
+      <div class="range" id="rangeOut">$&mdash;</div>
+      <div class="per" id="perOut"></div>
+      <div style="margin-top:16px">
+        <div class="row"><span>Acreage</span><span id="acOut"></span></div>
+        <div class="row"><span>Brush density</span><span id="dnOut"></span></div>
+        <div class="row"><span>Mobilization</span><span id="mbOut"></span></div>
+      </div>
+      <div class="badge">&#10003; Ground left finished &amp; usable &mdash; not just cut</div>
+      <div class="actions">
+        <a class="call" id="callBtn" href="tel:+19035679917">Call Now</a>
+        <a class="txt" id="smsBtn" href="#">Text This to Us</a>
+      </div>
+      <p class="fine">This range covers typical conditions for the density you picked. Rock, wet ground, big-diameter timber, or debris hauling can move it &mdash; the final number comes from a quick site walk, and it's firm once quoted.</p>
+    </div>
+  </div>
+</body>
+</html>

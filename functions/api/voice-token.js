@@ -57,8 +57,10 @@ export async function onRequest(context) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${env.XAI_API_KEY}`
       },
+      // xAI's client_secrets endpoint takes only expires_after (no `session`
+      // field); the agent/model is chosen by the client's WebSocket URL.
       body: JSON.stringify({
-        session: { model: env.XAI_VOICE_MODEL || 'grok-voice-latest' }
+        expires_after: { seconds: 300 }
       })
     });
     const data = await upstream.json().catch(() => ({}));

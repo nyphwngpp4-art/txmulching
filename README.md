@@ -43,7 +43,6 @@ Required for chat:
 Recommended:
 
 - `XAI_MODEL`: defaults to `grok-4.5`
-- `XAI_VOICE_MODEL`: defaults to `grok-voice-latest` (used by `/api/voice-token`)
 - `GOOGLE_SCRIPT_URL`: deployed Google Apps Script quote endpoint. A default is currently baked into `functions/api/quote.js`; setting this variable overrides it and is the preferred approach.
 - `ALLOWED_ORIGINS`: comma-separated production origins, such as `https://txmulching.com,https://www.txmulching.com`
 

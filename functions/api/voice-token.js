@@ -63,7 +63,11 @@ export async function onRequest(context) {
     });
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      console.error('voice-token upstream error', upstream.status, data?.error?.message || 'unknown');
+      const detail = data?.error?.message
+        || (typeof data?.error === 'string' ? data.error : '')
+        || data?.detail
+        || JSON.stringify(data).slice(0, 300);
+      console.error('voice-token upstream error', upstream.status, detail || 'unknown');
       return json(502, { error: 'Voice is temporarily unavailable.' });
     }
     // Pass through only what the client needs.

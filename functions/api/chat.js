@@ -123,7 +123,10 @@ export async function onRequest(context) {
       },
       body: JSON.stringify({
         model: env.XAI_MODEL || 'grok-4.5',
-        input: [{ role: 'system', content: systemPrompt }, ...messages],
+        // xAI's Responses API takes the system prompt via `instructions`;
+        // `input` accepts only user/assistant turns (a system role 400s).
+        instructions: systemPrompt,
+        input: messages,
         store: false
       }),
       signal: controller.signal
@@ -131,7 +134,12 @@ export async function onRequest(context) {
 
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      console.error('xAI chat error', upstream.status, data?.error?.message || 'Unknown upstream error');
+      // xAI error bodies vary: {error:{message}}, {error:"..."}, or {detail:"..."}.
+      const detail = data?.error?.message
+        || (typeof data?.error === 'string' ? data.error : '')
+        || data?.detail
+        || JSON.stringify(data).slice(0, 300);
+      console.error('xAI chat error', upstream.status, detail || 'Unknown upstream error');
       return json(502, { error: 'The chat assistant is temporarily unavailable.' });
     }
 

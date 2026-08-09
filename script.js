@@ -87,7 +87,7 @@
     } catch (error) {
       showError(`${error.message || 'Something went wrong.'} Please try again or call (903) 833-3965.`);
       submitButton.disabled = false;
-      submitButton.textContent = 'Get My Free Quote';
+      submitButton.textContent = 'Request My Callback';
     }
   });
 

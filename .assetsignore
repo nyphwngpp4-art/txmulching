@@ -1,0 +1,13 @@
+functions/
+src/
+node_modules/
+.wrangler/
+.git/
+.gitignore
+.assetsignore
+wrangler.jsonc
+package.json
+package-lock.json
+README.md
+PHONE-AGENT-SETUP.md
+business-data.json

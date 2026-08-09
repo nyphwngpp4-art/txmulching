@@ -25,17 +25,16 @@ Owner-led forestry mulching and land-clearing website for TX Mulching, LLC in Ca
 
 ## Hosting
 
-The site is deployed on **Cloudflare Pages**, connected to this GitHub repository.
+The site is deployed as a **Cloudflare Worker** (`txmulching`) with a static assets binding, connected to this GitHub repository.
 
-- The static files at the repository root are served directly.
-- Anything under `functions/` is deployed automatically as a Pages Function. `functions/api/quote.js` and `functions/api/chat.js` become the `/api/quote` and `/api/chat` routes.
-- `_headers` applies the security headers (CSP, HSTS, `X-Frame-Options`, etc.).
+- `wrangler.jsonc` defines the Worker: `src/worker.js` is the entry point and the repository root is the assets directory (`.assetsignore` keeps code, config, and internal docs out of the published assets).
+- `src/worker.js` routes `/api/chat`, `/api/quote`, and `/api/voice-token` to the handlers in `functions/api/` and serves everything else from the assets binding (pretty URLs give `/estimate`).
+- `_headers` applies the security headers (CSP, HSTS, `Permissions-Policy` with `microphone=(self)` for the voice widget, etc.) to asset responses.
+- Deploy with `npx wrangler deploy` (or let the git-connected build deploy on push to `main`).
 
-Cloudflare build settings: **Build command** should be empty and **Build output directory** should be `/` (the repository root). There is no build step — do not add one. A `package.json` in the root will cause Cloudflare to attempt a Node build and fail, so the project intentionally does not include one.
+## Environment variables (Worker secrets)
 
-## Environment variables (Cloudflare Pages secrets)
-
-Set these under the Pages project → Settings → Environment variables (mark `XAI_API_KEY` as a Secret).
+Set these on the Worker (Settings → Variables and Secrets, or `npx wrangler secret put NAME`). `XAI_API_KEY` must be a Secret.
 
 Required for chat:
 
@@ -44,6 +43,7 @@ Required for chat:
 Recommended:
 
 - `XAI_MODEL`: defaults to `grok-4.5`
+- `XAI_VOICE_MODEL`: defaults to `grok-voice-latest` (used by `/api/voice-token`)
 - `GOOGLE_SCRIPT_URL`: deployed Google Apps Script quote endpoint. A default is currently baked into `functions/api/quote.js`; setting this variable overrides it and is the preferred approach.
 - `ALLOWED_ORIGINS`: comma-separated production origins, such as `https://txmulching.com,https://www.txmulching.com`
 
@@ -58,10 +58,11 @@ The chat endpoint sends only the recent conversation and verified business conte
 Run the project with Wrangler so `/api/quote` and `/api/chat` are available:
 
 ```
-npx wrangler pages dev .
+npm install
+npx wrangler dev
 ```
 
-Opening `index.html` directly will display the site but cannot run the Pages Functions.
+Opening `index.html` directly will display the site but cannot run the API routes.
 
 ## Phone integration
 

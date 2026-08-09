@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Must match the existing Worker that owns txmulching.com so deploys update it.
+  "name": "txmulching",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    // API routes never fall through to static assets.
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}

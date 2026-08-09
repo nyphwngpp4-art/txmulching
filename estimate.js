@@ -3,7 +3,7 @@
 
   /* ============== CONFIG — edit rates here, nothing else ============== */
   const CFG = {
-    phone: '+19035679917',
+    phone: '+14695951984', /* SMS lead fallback -> owner cell; owner cell; SMS leads go straight to Dad */
     minJob: 2500,                 /* minimum job, dollars */
     smallLightAcres: 3,           /* light brush under this acreage -> referred out */
     densities: [

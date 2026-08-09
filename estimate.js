@@ -5,7 +5,7 @@
   const CFG = {
     phone: '+14695951984', /* SMS lead fallback -> owner cell; owner cell; SMS leads go straight to Dad */
     minJob: 2500,                 /* minimum job, dollars */
-    smallLightAcres: 3,           /* light brush under this acreage -> referred out */
+    minAcres: 3,                  /* below this acreage (any density) -> referred out */
     densities: [
       { id: 'heavy',   t: 'Heavy',      d: "Thick trees & undergrowth, can't see through", lo: 3000, hi: 4600 },
       { id: 'extreme', t: 'Very heavy', d: 'Dense timber wall — needs a look in person',   lo: 0,    hi: 0 },
@@ -52,7 +52,7 @@
   function calc() {
     const a = Math.max(0.5, parseFloat($('acres').value) || 0);
     const z = CFG.zones[$('zone').value];
-    const refer = sel.id === 'light' && a < CFG.smallLightAcres;
+    const refer = a < CFG.minAcres;
     const siteVisit = !refer && (sel.lo === 0 || z.visit === true);
     let lo = sel.lo * a, hi = sel.hi * a;
     let mob = 'Included';
@@ -64,7 +64,7 @@
 
   function summary(r) {
     const zoneText = $('zone').options[$('zone').selectedIndex].text;
-    if (r.refer) return r.a + ' acres, ' + sel.t + ' brush, ' + zoneText + '. Small light-brush job — referred toward compact machine, wants advice.';
+    if (r.refer) return r.a + ' acres, ' + sel.t + ' brush, ' + zoneText + '. Under ' + CFG.minAcres + ' acres — referred toward compact machine, wants advice.';
     if (r.siteVisit) return r.a + ' acres, ' + sel.t + ' brush, ' + zoneText + '. Needs a site walk.';
     return r.a + ' acres, ' + sel.t + ' brush, ' + zoneText + '. Range shown: ' + usd(r.lo) + '-' + usd(r.hi) + '.';
   }
@@ -77,7 +77,7 @@
     if (r.refer) {
       $('rangeOut').textContent = 'Honest answer';
       $('rangeOut').style.fontSize = 'clamp(26px,6vw,40px)';
-      $('perOut').textContent = "For light brush on a lot this size, a compact machine will likely cost you less than our minimum. Call or text and we'll point you to the right fit — and if the brush is thicker than it sounds, we've got you.";
+      $('perOut').textContent = "For a property this size, a compact machine will likely cost you less than our heavy-equipment minimum. Call or text and we'll point you to the right fit — and if the job is bigger than it sounds, we've got you.";
     } else if (r.siteVisit) {
       $('rangeOut').textContent = 'Site walk';
       $('rangeOut').style.fontSize = 'clamp(30px,7vw,44px)';

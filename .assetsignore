@@ -8,6 +8,5 @@ node_modules/
 wrangler.jsonc
 package.json
 package-lock.json
-README.md
-PHONE-AGENT-SETUP.md
+*.md
 business-data.json

@@ -3,7 +3,7 @@
 
   /* ============== CONFIG — edit rates here, nothing else ============== */
   const CFG = {
-    phone: '+14695951984', /* SMS lead fallback -> owner cell; owner cell; SMS leads go straight to Dad */
+    phone: '+19038333965',        /* business line shown on the results card */
     minJob: 2500,                 /* minimum job, dollars */
     minAcres: 3,                  /* below this acreage (any density) -> referred out */
     densities: [
@@ -87,8 +87,6 @@
       $('rangeOut').textContent = usd(r.lo) + ' – ' + usd(r.hi);
       $('perOut').textContent = '≈ ' + usd(r.lo / r.a) + '–' + usd(r.hi / r.a) + ' per acre, mulched in place. No burn piles, no hauling.';
     }
-    const body = 'Hi, I used the estimate tool on txmulching.com. ' + $('name').value.trim() + ' — ' + summary(r);
-    $('smsBtn').href = 'sms:' + CFG.phone + '?&body=' + encodeURIComponent(body);
   }
 
   function send() {

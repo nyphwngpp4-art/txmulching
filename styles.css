@@ -16,3 +16,10 @@
 .vs-note{margin-top:26px;display:flex;gap:22px;align-items:center;justify-content:space-between;background:var(--dark);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;}
 .vs-note p{margin:0;color:var(--muted);font-size:14px;line-height:1.6;max-width:62ch;}
 @media (max-width:760px){.vs-note{flex-direction:column;align-items:flex-start;}}
+
+/* === Texas service map (Where We Work card) === */
+.tx-outline{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;opacity:.55;}
+.tx-belt{fill:var(--green);opacity:.55;}
+.tx-radius{fill:var(--amber);opacity:.16;stroke:var(--amber);stroke-width:1.2;stroke-opacity:.5;}
+.tx-dot{fill:var(--amber);}
+.map .tx-belt-label{fill:#b8d89f;opacity:.85;letter-spacing:.1em;}

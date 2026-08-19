@@ -1,72 +1,195 @@
-# Lead notifications — Apps Script setup
+# Lead notifications & business email
 
-Leads from the website (quote form, instant estimate, chat handoffs) POST to
-`/api/quote`, which forwards them to a Google Apps Script that appends a row to
-the **"TX Mulching Quote Leads"** Sheet (owned by `agavi.aiconsulting@gmail.com`).
+Website leads (quote form + instant estimate) POST to `/api/quote`, which
+forwards to a Google Apps Script that appends a row to the **"TX Mulching
+Quote Leads"** Sheet and then sends alerts.
 
-As of Aug 2026 the script only appends the row — nobody is notified. That is
-how the May 27 lead (Jared Cole) went unseen for 10 weeks. This adds an email
-to info@txmulching.com plus a text to the owner's cell on every lead.
+## Two separate problems — don't conflate them
 
-## Steps
+1. **Alert routing** (urgent): alerts currently reach Jay only. The owners
+   need them on their phones. This is fixed entirely in the Apps Script and
+   does **not** depend on any email migration.
+2. **Where `info@txmulching.com` lives** (housekeeping): currently an
+   iCloud+ Custom Email Domain mailbox. Optionally move to Cloudflare Email
+   Routing so mail forwards to whatever inbox the owners actually read.
 
-1. Log in as `agavi.aiconsulting@gmail.com` and open the Sheet
-   "TX Mulching Quote Leads" → Extensions → Apps Script.
-2. In the script editor, find the `doPost` function. After the line that
-   appends the row (`appendRow(...)` or similar), add:
+## Part 1 — Apps Script (fixes the alerts)
 
-   ```js
-   try { notifyLead_(data); } catch (err) { console.error('notify failed', err); }
-   ```
+Replace the whole script file with the version below, then **Deploy →
+Manage deployments → pencil → Version: New version → Deploy**.
+Editing the code alone changes nothing in production.
 
-   (`data` = the parsed JSON object; match the variable name used in doPost.)
+Fill in the CONFIG block at the top. Carrier gateways:
 
-3. Paste this function at the bottom of the script file:
+| Carrier  | Gateway suffix   |
+|----------|------------------|
+| AT&T     | `@txt.att.net`   |
+| Verizon  | `@vtext.com`     |
+| T-Mobile | `@tmomail.net`   |
 
-   ```js
-   // Carrier gateway for (469) 595-1984 — pick ONE line for Dad's carrier:
-   //   Verizon:  '4695951984@vtext.com'
-   //   AT&T:     '4695951984@txt.att.net'
-   //   T-Mobile: '4695951984@tmomail.net'
-   var SMS_GATEWAY = '4695951984@vtext.com';
+```js
+/* ================= CONFIG — edit these ================= */
+var SHEET_ID = '1LoWcYng7Je_KaVSGKdFVTAKmNGSQ06sGuFVk_8pHqoI';
 
-   function notifyLead_(data) {
-     var name = data.name || 'Unknown';
-     var phone = data.phone || 'no phone';
-     var lines = [
-       'Name: ' + name,
-       'Phone: ' + phone,
-       'Email: ' + (data.email || '—'),
-       'ZIP: ' + (data.zipcode || '—'),
-       'Acreage: ' + (data.acreage || '—'),
-       'Service: ' + (data.serviceType || '—'),
-       'Details: ' + (data.description || '—'),
-       '',
-       'Sheet: https://docs.google.com/spreadsheets/d/1LoWcYng7Je_KaVSGKdFVTAKmNGSQ06sGuFVk_8pHqoI/edit'
-     ];
-     MailApp.sendEmail({
-       to: 'info@txmulching.com',
-       subject: 'New TX Mulching lead: ' + name + ' (' + phone + ')',
-       body: lines.join('\n')
-     });
-     // Email-to-SMS: keep it short, no subject.
-     MailApp.sendEmail({
-       to: SMS_GATEWAY,
-       subject: '',
-       body: 'TXM lead: ' + name + ' ' + phone + ' — ' +
-             (data.acreage || '?') + ', ' + (data.serviceType || 'service TBD')
-     });
-   }
-   ```
+// Everyone who should get the full lead by email.
+var NOTIFY_EMAILS = [
+  'info@txmulching.com',      // business address
+  'PARENTS_EMAIL_HERE',       // <-- the inbox the owners actually read
+  'j.messamore@gmail.com'     // backstop
+];
 
-4. Save, then **Deploy → Manage deployments → Edit (pencil) → Version: New
-   version → Deploy**. (Apps Script web apps serve the deployed version, not
-   the saved code — skipping this step means no change in production.)
-5. Test: submit the website form with a test name; confirm the email arrives
-   at info@txmulching.com and the text hits the cell. Delete the test row.
+// Phones that should get the short text. Number + carrier gateway.
+var NOTIFY_SMS = [
+  '4695951984@txt.att.net'    // Dad, AT&T
+  // ,'MOM_NUMBER@txt.att.net'
+];
+/* ======================================================= */
 
-Notes:
-- Confirm `info@txmulching.com` is actually monitored before relying on it.
-- Email-to-SMS gateways are carrier-dependent and best-effort; the email is
-  the reliable channel, the text is the fast one.
-- MailApp free quota is ~100 recipients/day — far above lead volume.
+function doPost(e) {
+  var data = {};
+  try {
+    data = JSON.parse(e.postData.contents);
+  } catch (err) {
+    data = (e && e.parameter) || {};
+  }
+
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('Sheet1') || ss.getSheets()[0];
+
+  sheet.appendRow([
+    new Date(),
+    data.name || '',
+    data.phone || '',
+    data.email || '',
+    data.zipcode || '',
+    data.acreage || '',
+    data.serviceType || '',
+    data.description || ''
+  ]);
+
+  try {
+    notifyLead_(data);
+  } catch (err) {
+    console.error('notify failed', err);
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function notifyLead_(data) {
+  var name = data.name || 'Unknown';
+  var phone = data.phone || 'no phone';
+
+  var body = [
+    'Name: ' + name,
+    'Phone: ' + phone,
+    'Email: ' + (data.email || '—'),
+    'ZIP: ' + (data.zipcode || '—'),
+    'Acreage: ' + (data.acreage || '—'),
+    'Service: ' + (data.serviceType || '—'),
+    'Details: ' + (data.description || '—'),
+    '',
+    'Call back: ' + phone,
+    'All leads: https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit'
+  ].join('\n');
+
+  // One email per recipient so a single bad address cannot block the rest.
+  NOTIFY_EMAILS.forEach(function (to) {
+    if (!to || to.indexOf('_HERE') > -1) return;
+    try {
+      MailApp.sendEmail({
+        to: to,
+        subject: 'New TX Mulching lead: ' + name + ' (' + phone + ')',
+        body: body
+      });
+    } catch (err) {
+      console.error('email failed for ' + to, err);
+    }
+  });
+
+  var sms = 'TXM lead: ' + name + ' ' + phone + ' — ' +
+            (data.acreage || '?') + ', ' + (data.serviceType || 'service TBD');
+
+  NOTIFY_SMS.forEach(function (to) {
+    if (!to || to.indexOf('_NUMBER') > -1) return;
+    try {
+      MailApp.sendEmail({ to: to, subject: '', body: sms });
+    } catch (err) {
+      console.error('sms failed for ' + to, err);
+    }
+  });
+}
+
+// Run once from the editor to authorize and confirm delivery, then delete
+// any test rows from the Sheet.
+function testNotification() {
+  notifyLead_({
+    name: 'TEST — delete me',
+    phone: '(555) 010-0000',
+    acreage: '5 acres',
+    serviceType: 'Forestry Mulching',
+    description: 'Test of lead notifications.'
+  });
+}
+```
+
+Why the per-recipient loop matters: `MailApp.sendEmail` with a comma list
+fails as a unit. If one address bounces, nobody gets alerted — the exact
+failure mode that would silently recreate the current problem.
+
+## Part 2 — Business email: iCloud+ vs Cloudflare Email Routing
+
+`txmulching.com` DNS is already on Cloudflare (the Worker serves the apex
+domain), so Email Routing is available at no cost.
+
+**The decisive difference: Cloudflare Email Routing is receive-and-forward
+only. It cannot send.** Nothing can reply *as* `info@txmulching.com`
+through Cloudflare alone.
+
+| | iCloud+ Custom Domain (current) | Cloudflare Email Routing |
+|---|---|---|
+| Receive at info@ | Yes | Yes (forwards anywhere) |
+| **Reply as info@** | **Yes** | **No** (needs an SMTP sender) |
+| Cost | Part of iCloud+ | Free |
+| Ties to | An Apple ID / device | Nothing — any inbox |
+| Aliases | Limited | Unlimited (sales@, quotes@…) |
+
+**Recommendation:** move to Cloudflare Email Routing *if* the owners only
+need to **receive** leads and respond by phone — which matches how this
+business actually runs (every lead gets a callback, not an email reply).
+It removes the Apple-account dependency, forwards to whatever inbox they
+already check, and costs nothing.
+
+**Keep iCloud+ if** they want to send email *from* `info@txmulching.com`
+for quotes, invoices, or vendors. Losing send-as is the one real downside
+and it is not easily recovered later without a paid mail host.
+
+### Migration steps (only if moving to Cloudflare)
+
+1. Cloudflare dashboard → `txmulching.com` → **Email** → **Email Routing** →
+   Get started.
+2. Add the destination address (owners' preferred inbox) and have them click
+   the verification email Cloudflare sends. **Verification is required.**
+3. Create a custom address: `info@txmulching.com` → forward to that inbox.
+   Add `quotes@` or `sales@` too if wanted — aliases are free.
+4. Let Cloudflare add its MX + SPF records automatically. **This replaces
+   the iCloud MX records** — the two cannot coexist; whichever MX set is
+   live wins.
+5. Send a test to `info@txmulching.com` and confirm it lands.
+6. Only after that works, remove the domain from iCloud+ settings. Mail
+   already sitting in the iCloud mailbox stays there — save anything needed
+   before disconnecting.
+
+Order matters: verify the new path *before* tearing down the old one, or
+mail sent in between bounces.
+
+## Open items
+
+- Owners' preferred inbox address (needed for both parts).
+- Mom's cell + carrier, if she should get texts too.
+- Confirm whether Dad's AT&T text is arriving.
+- Carrier email-to-SMS gateways are free but best-effort and increasingly
+  deprecated. If texts prove unreliable, the durable fix is a Twilio SMS
+  send from the Worker (~$0.008/message).

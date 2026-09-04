@@ -15,35 +15,24 @@ Quote Leads"** Sheet and then sends alerts.
 
 ## Part 1 — Apps Script (fixes the alerts)
 
-Replace the whole script file with the version below, then **Deploy →
-Manage deployments → pencil → Version: New version → Deploy**.
+Email only — no SMS gateways (owner decision, Aug 2026). Every lead goes to
+Kim, Hal, the business address, and Jay as a backstop.
+
+Replace the whole script file with the version below, run
+`testNotification` once from the editor to confirm delivery, then
+**Deploy → Manage deployments → pencil → Version: New version → Deploy**.
 Editing the code alone changes nothing in production.
 
-Fill in the CONFIG block at the top. Carrier gateways:
-
-| Carrier  | Gateway suffix   |
-|----------|------------------|
-| AT&T     | `@txt.att.net`   |
-| Verizon  | `@vtext.com`     |
-| T-Mobile | `@tmomail.net`   |
-
 ```js
-/* ================= CONFIG — edit these ================= */
 var SHEET_ID = '1LoWcYng7Je_KaVSGKdFVTAKmNGSQ06sGuFVk_8pHqoI';
 
-// Everyone who should get the full lead by email.
+// Everyone who gets the full lead by email.
 var NOTIFY_EMAILS = [
+  'messamoreh@gmail.com',     // Hal
+  'messamore.gk@gmail.com',   // Kim
   'info@txmulching.com',      // business address
-  'PARENTS_EMAIL_HERE',       // <-- the inbox the owners actually read
-  'j.messamore@gmail.com'     // backstop
+  'j.messamore@gmail.com'     // backstop — remove if not wanted
 ];
-
-// Phones that should get the short text. Number + carrier gateway.
-var NOTIFY_SMS = [
-  '4695951984@txt.att.net'    // Dad, AT&T
-  // ,'MOM_NUMBER@txt.att.net'
-];
-/* ======================================================= */
 
 function doPost(e) {
   var data = {};
@@ -97,7 +86,6 @@ function notifyLead_(data) {
 
   // One email per recipient so a single bad address cannot block the rest.
   NOTIFY_EMAILS.forEach(function (to) {
-    if (!to || to.indexOf('_HERE') > -1) return;
     try {
       MailApp.sendEmail({
         to: to,
@@ -108,22 +96,10 @@ function notifyLead_(data) {
       console.error('email failed for ' + to, err);
     }
   });
-
-  var sms = 'TXM lead: ' + name + ' ' + phone + ' — ' +
-            (data.acreage || '?') + ', ' + (data.serviceType || 'service TBD');
-
-  NOTIFY_SMS.forEach(function (to) {
-    if (!to || to.indexOf('_NUMBER') > -1) return;
-    try {
-      MailApp.sendEmail({ to: to, subject: '', body: sms });
-    } catch (err) {
-      console.error('sms failed for ' + to, err);
-    }
-  });
 }
 
-// Run once from the editor to authorize and confirm delivery, then delete
-// any test rows from the Sheet.
+// Run once from the editor to confirm delivery to every inbox.
+// Sends a clearly-labelled test to all recipients.
 function testNotification() {
   notifyLead_({
     name: 'TEST — delete me',
@@ -137,7 +113,11 @@ function testNotification() {
 
 Why the per-recipient loop matters: `MailApp.sendEmail` with a comma list
 fails as a unit. If one address bounces, nobody gets alerted — the exact
-failure mode that would silently recreate the current problem.
+failure mode that would silently recreate the original problem.
+
+First-delivery gotcha: Gmail may route the first alert from
+`agavi.aiconsulting@gmail.com` to Spam or Promotions. Kim and Hal should
+check there once and mark it "Not spam" so future leads land in Primary.
 
 ## Part 2 — Business email: iCloud+ vs Cloudflare Email Routing
 
@@ -187,9 +167,5 @@ mail sent in between bounces.
 
 ## Open items
 
-- Owners' preferred inbox address (needed for both parts).
-- Mom's cell + carrier, if she should get texts too.
-- Confirm whether Dad's AT&T text is arriving.
-- Carrier email-to-SMS gateways are free but best-effort and increasingly
-  deprecated. If texts prove unreliable, the durable fix is a Twilio SMS
-  send from the Worker (~$0.008/message).
+- Decide on the iCloud+ → Cloudflare Email Routing move (Part 2). Not
+  required for alerts to work — the script emails Kim and Hal directly.

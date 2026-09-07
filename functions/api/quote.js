@@ -98,8 +98,13 @@ export async function onRequest(context) {
       body: JSON.stringify(payload),
       redirect: 'follow'
     });
-    if (!upstream.ok) {
-      console.error('Quote upstream error', upstream.status, await upstream.text().catch(() => ''));
+    // Apps Script answers HTTP 200 even for script crashes and sign-in pages
+    // (HTML bodies), so success requires the script's own {ok:true} reply.
+    const upstreamText = await upstream.text().catch(() => '');
+    let upstreamJson = null;
+    try { upstreamJson = JSON.parse(upstreamText); } catch { /* not JSON */ }
+    if (!upstream.ok || !upstreamJson || upstreamJson.ok !== true) {
+      console.error('Quote not stored', payload.requestId, upstream.status, upstreamText.slice(0, 200));
       return json(502, { error: 'The quote service is temporarily unavailable.' });
     }
     return json(200, { ok: true, requestId: payload.requestId });

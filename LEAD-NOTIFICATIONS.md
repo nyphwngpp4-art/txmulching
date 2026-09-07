@@ -53,7 +53,8 @@ function doPost(e) {
     data.zipcode || '',
     data.acreage || '',
     data.serviceType || '',
-    data.description || ''
+    data.description || '',
+    data.requestId || ''      // column I "Request ID" — matches the Worker log
   ]);
 
   try {
@@ -79,6 +80,7 @@ function notifyLead_(data) {
     'Acreage: ' + (data.acreage || '—'),
     'Service: ' + (data.serviceType || '—'),
     'Details: ' + (data.description || '—'),
+    'Reference: ' + (data.requestId || '—'),
     '',
     'Call back: ' + phone,
     'All leads: https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit'
@@ -165,7 +167,31 @@ and it is not easily recovered later without a paid mail host.
 Order matters: verify the new path *before* tearing down the old one, or
 mail sent in between bounces.
 
+## Part 3 — Rotate the Script URL (one-time)
+
+The Apps Script `/exec` URL was committed to this repository while it was
+public, so anyone who saw it can post junk straight to the Sheet, bypassing
+the Worker's rate limit and honeypot. Rotation = new deployment URL, moved
+into a Worker secret, old deployment archived.
+
+1. Paste the Part 1 script (it now writes column I "Request ID" — add that
+   header to cell I1 of the Sheet).
+2. **Deploy → New deployment** (not "Manage deployments" this time — a new
+   URL is the point). Type: Web app · Execute as: Me · Who has access:
+   Anyone. Copy the new `/exec` URL.
+3. Cloudflare → Workers & Pages → `txmulching` → Settings → Variables and
+   Secrets → **Add** → type Secret, name `GOOGLE_SCRIPT_URL`, value = the
+   new URL. Takes effect immediately; the Worker prefers the secret over
+   the fallback baked into `quote.js`.
+4. Submit the site's callback form once and confirm the row lands with a
+   Request ID in column I and the alert emails arrive.
+5. Back in Apps Script: **Deploy → Manage deployments → archive the old
+   deployment.** The leaked URL now returns an error.
+6. Tell Jay's session it's done; the fallback URL is then removed from
+   `quote.js` so the secret is the only source of truth.
+
 ## Open items
 
+- Part 3 rotation (steps above), then remove the fallback from `quote.js`.
 - Decide on the iCloud+ → Cloudflare Email Routing move (Part 2). Not
   required for alerts to work — the script emails Kim and Hal directly.

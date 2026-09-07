@@ -91,6 +91,8 @@ function notifyLead_(data) {
     try {
       MailApp.sendEmail({
         to: to,
+        name: 'TX Mulching Leads',                    // display name in the inbox
+        replyTo: data.email || 'info@txmulching.com', // Reply goes to the customer
         subject: 'New TX Mulching lead: ' + name + ' (' + phone + ')',
         body: body
       });
@@ -116,6 +118,12 @@ function testNotification() {
 Why the per-recipient loop matters: `MailApp.sendEmail` with a comma list
 fails as a unit. If one address bounces, nobody gets alerted — the exact
 failure mode that would silently recreate the original problem.
+
+Sender identity: MailApp always sends from the Google account that owns the
+script (agavi.aiconsulting@gmail.com); only the display name is changeable.
+Showing `info@txmulching.com` as the address would require adding it as a
+"Send mail as" alias in that Gmail account and switching to `GmailApp` —
+not worth it for family-only alerts.
 
 First-delivery gotcha: Gmail may route the first alert from
 `agavi.aiconsulting@gmail.com` to Spam or Promotions. Kim and Hal should

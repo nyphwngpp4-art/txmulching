@@ -81,6 +81,7 @@
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'We could not submit the request.');
+      if (window.txTrack) window.txTrack('quote_submit', { service_type: data.serviceType || 'unspecified' });
       form.hidden = true;
       successBox.hidden = false;
       successBox.focus?.();

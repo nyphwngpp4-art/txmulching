@@ -112,6 +112,7 @@
   $('toStep2').addEventListener('click', () => {
     const a = parseFloat($('acres').value);
     if (!a || a <= 0) { $('acres').focus(); return; }
+    if (window.txTrack) window.txTrack('estimate_start', { acres: a, density: sel.id, zone: $('zone').value });
     show('step2');
   });
 
@@ -121,6 +122,11 @@
     if (!$('name').value.trim()) { $('name').focus(); return; }
     render();
     send();
+    const r = calc();
+    if (window.txTrack) window.txTrack('estimate_complete', {
+      acres: r.a, density: sel.id, zone: $('zone').value,
+      outcome: r.refer ? 'referred' : r.siteVisit ? 'site_walk' : 'range'
+    });
     show('step3');
   });
 })();

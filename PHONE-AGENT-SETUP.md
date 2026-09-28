@@ -1,7 +1,7 @@
 # TX Mulching — Grok Voice Phone Answering Setup
 
 Goal: missed calls to (903) 833-3965 get answered by a Grok voice agent that
-sounds local, captures the lead, and texts Dad a summary — instead of going
+sounds local, captures the lead, and emails the owners a summary — instead of going
 to voicemail and losing the job to whoever answers next.
 
 ## Recommended path: Grok Voice Agent Builder (no code, $0.05/min)
@@ -42,15 +42,16 @@ Facts you may state:
   purpose-built forestry machine — jobs finish in days, not weeks.
 - 250+ days of Texas Parks & Wildlife contract work.
 - Everything is mulched in place: no burn piles, no hauling.
-- Instant estimates online at txmulching.com/estimate.
+- Quote requests online at txmulching.com: fill out the callback form and
+  the owner calls back. The website publishes no pricing.
 
 Your job on every call, in order:
 1. Get their NAME and CALLBACK NUMBER first — nothing else matters more.
 2. Then: rough ACREAGE, how THICK the brush is (can they walk through it,
    drive through it, or is it a wall of trees), the PROPERTY LOCATION
    (town or county), and their TIMELINE.
-3. Tell them the owner will call back, and that they can get a price range
-   right now at txmulching.com slash estimate.
+3. Tell them the owner will call back to talk it through and, for most jobs,
+   set up a quick site walk before quoting.
 
 Hard rules:
 - NEVER quote a price, a schedule date, or promise the job can be done.
@@ -65,12 +66,12 @@ End every call by repeating their number back to confirm it.
 
 ## After each call
 
-Configure the Builder's post-call action (summary/webhook) to text or email
-the call summary to Dad. If the Builder supports a webhook, point it at
-https://txmulching.com/api/quote with fields name, phone, description — calls
-will then land in the same Google Sheet as website leads. If it only supports
-email/SMS summaries, use those; the Sheet wiring can come later via the SIP
-API route.
+Configure the Builder's post-call action (summary/webhook) to email the call
+summary to the owners, the same way website leads arrive (email only, no
+texts). Pointing a webhook at https://txmulching.com/api/quote won't work as
+is: that endpoint requires the browser form's `formStartedAt` timing check, so
+call summaries need a small dedicated route first. Until then, use email
+summaries; the Sheet wiring can come later via the SIP API route.
 
 ## Graduation path (later, optional)
 
@@ -83,8 +84,8 @@ Builder version proves the concept.
 
 ## Do-not-skip checklist
 
-- [ ] Site Functions deploying (git-connected Pages, not direct upload)
-- [ ] XAI_API_KEY set in Pages project → Settings → Environment variables
+- [ ] Site deploying from `main` (git-connected Cloudflare Worker build)
+- [ ] XAI_API_KEY set as a Worker secret (Settings → Variables and Secrets)
 - [ ] Chat bubble works on txmulching.com (text first, then mic)
 - [ ] Builder agent created + tested in playground
 - [ ] Conditional forwarding dialed in on Dad's cell

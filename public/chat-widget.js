@@ -28,7 +28,7 @@
       </div>
       <div class="chat-messages" role="log" aria-live="polite"></div>
       <div class="chat-quote-offer" hidden>
-        <button class="chat-quote-button" type="button">Get an instant estimate &rarr;</button>
+        <button class="chat-quote-button" type="button">Request a callback &rarr;</button>
       </div>
       <form class="chat-form">
         <div class="chat-input-row">
@@ -37,7 +37,7 @@
           <button type="submit">Send</button>
         </div>
         <div class="chat-error" hidden></div>
-        <p class="chat-note">AI assistant &mdash; for pricing, use the <a href="/estimate">instant estimate</a> or call ${PHONE_DISPLAY}.</p>
+        <p class="chat-note">AI assistant &mdash; for a quote, <a href="/#quote">request a callback</a> or call ${PHONE_DISPLAY}.</p>
       </form>
     </div>`;
   document.body.appendChild(root);
@@ -52,7 +52,7 @@
   const micBtn = root.querySelector('.chat-mic');
   const errBox = root.querySelector('.chat-error');
   const quoteOffer = root.querySelector('.chat-quote-offer');
-  root.querySelector('.chat-quote-button').addEventListener('click', () => { location.href = '/estimate'; });
+  root.querySelector('.chat-quote-button').addEventListener('click', () => { closePanel(); location.href = '/#quote'; });
 
   const history = [];
   let greeted = false;
@@ -85,7 +85,8 @@
     if (open) input.focus();
     if (!open) stopVoice();
   });
-  closeBtn.addEventListener('click', () => { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); stopVoice(); });
+  function closePanel() { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); stopVoice(); }
+  closeBtn.addEventListener('click', closePanel);
 
   /* ---------- Text chat ---------- */
   form.addEventListener('submit', async (e) => {
@@ -107,7 +108,7 @@
       const data = await res.json().catch(() => ({}));
       thinking.parentElement.remove();
       if (!res.ok || !data.reply) {
-        showError(data.error || 'The assistant is unavailable right now — call or text ' + PHONE_DISPLAY + '.');
+        showError(data.error || 'The assistant is unavailable right now — call ' + PHONE_DISPLAY + '.');
       } else {
         history.push({ role: 'assistant', content: data.reply });
         bubble('assistant', data.reply);
@@ -115,7 +116,7 @@
       }
     } catch {
       thinking.parentElement.remove();
-      showError('Connection problem — call or text ' + PHONE_DISPLAY + '.');
+      showError('Connection problem — call ' + PHONE_DISPLAY + '.');
     } finally {
       input.disabled = false; send.disabled = false; input.focus();
     }
@@ -188,7 +189,7 @@
         };
         if (!AGENT_ID) {
           session.voice = 'eve';
-          session.instructions = 'You are the friendly voice assistant for TX Mulching, an owner-led forestry mulching and land clearing company in Canton, Texas serving East Texas. Specialty: heavy timber and large acreage with a high-horsepower purpose-built forestry machine — finished in days, not weeks. Never invent prices; for pricing send people to the instant estimate at txmulching.com/estimate or to call ' + PHONE_DISPLAY + '. Collect name, phone, acreage, brush thickness, and location when someone is interested. Keep replies short and conversational.';
+          session.instructions = 'You are the friendly voice assistant for TX Mulching, an owner-led forestry mulching and land clearing company in Canton, Texas serving East Texas. Specialty: heavy timber and large acreage with a high-horsepower purpose-built forestry machine — finished in days, not weeks. Never give prices or price ranges; for a quote, send people to the callback request form on txmulching.com or have them call ' + PHONE_DISPLAY + '. Do not collect names or phone numbers: nothing said here reaches the owner. Keep replies short and conversational.';
         }
         ws.send(JSON.stringify({ type: 'session.update', session }));
         audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });

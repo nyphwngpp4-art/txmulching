@@ -19,7 +19,8 @@
     "Trail Cutting",
     "Lot Clearing",
     "Right-of-Way Clearing",
-    "Pond and Access Cleanup"
+    "Pond and Access Cleanup",
+    "Excavation and dirt work (done by the owner; specialized equipment sourced through his contacts when needed)"
   ],
   "positioning": [
     "Heavy timber & large-acreage specialists",
@@ -28,5 +29,5 @@
     "Clean, usable finish",
     "Private, commercial and government-ready"
   ],
-  "instantEstimateUrl": "https://txmulching.com/estimate"
+  "quoteUrl": "https://txmulching.com/#quote"
 }

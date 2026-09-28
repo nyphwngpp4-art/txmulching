@@ -1,6 +1,6 @@
 # Lead notifications & business email
 
-Website leads (quote form + instant estimate) POST to `/api/quote`, which
+Website leads (the callback form) POST to `/api/quote`, which
 forwards to a Google Apps Script that appends a row to the **"TX Mulching
 Quote Leads"** Sheet and then sends alerts.
 

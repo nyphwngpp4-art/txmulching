@@ -5,7 +5,8 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-08-01",
   "assets": {
-    "directory": ".",
+    // Only public/ is published; code, config, docs and secrets stay out of it.
+    "directory": "public",
     "binding": "ASSETS",
     // API routes never fall through to static assets.
     "run_worker_first": ["/api/*"]

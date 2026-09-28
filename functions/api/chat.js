@@ -32,7 +32,9 @@ function isRateLimited(ip) {
 
 function validOrigin(request, env) {
   const origin = request.headers.get('origin');
-  if (!origin) return true;
+  // Browsers always send Origin on these POSTs; a request without one is a
+  // script spending xAI credit, not a visitor.
+  if (!origin) return false;
   const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
   if (allowed.length) return allowed.includes(origin);
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host');

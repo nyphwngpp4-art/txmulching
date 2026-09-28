@@ -8,6 +8,9 @@
   <meta name="description" content="Owner-led heavy forestry mulching and land clearing from Canton, Texas. High-horsepower equipment for dense timber and large acreage. Call or request a quote online.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#0c0b08">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="canonical" href="https://txmulching.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="TX Mulching">
@@ -15,7 +18,9 @@
   <meta property="og:description" content="Owner-led land clearing from Canton, Texas. Forestry mulching, brush removal, ROW cleanup, fence lines, trails and more.">
   <meta property="og:url" content="https://txmulching.com/">
   <meta property="og:image" content="https://txmulching.com/images/og-image.jpg">
-  <meta property="og:image:alt" content="TX Mulching equipment clearing brush in East Texas">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="TX Mulching's forestry mulcher grinding brush on an East Texas right-of-way">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="TX Mulching | Forestry Mulching & Land Clearing">
   <meta name="twitter:description" content="Owner-led forestry mulching and land clearing from Canton, Texas.">
@@ -27,31 +32,144 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "@id": "https://txmulching.com/#business",
-    "name": "TX Mulching, LLC",
-    "url": "https://txmulching.com/",
-    "telephone": "+1-903-833-3965",
-    "image": "https://txmulching.com/images/og-image.jpg",
-    "description": "Owner-led forestry mulching, land clearing, brush removal, fence-line clearing, trail cutting, lot clearing, right-of-way clearing, and pond and access cleanup.",
-    "address": {"@type": "PostalAddress", "addressLocality": "Canton", "addressRegion": "TX", "addressCountry": "US"},
-    "areaServed": [{"@type": "State", "name": "Texas"}, {"@type": "AdministrativeArea", "name": "East Texas"}, {"@type": "City", "name": "Canton, TX"}, {"@type": "City", "name": "Tyler, TX"}, {"@type": "City", "name": "Athens, TX"}, {"@type": "City", "name": "Longview, TX"}, {"@type": "City", "name": "Nacogdoches, TX"}, {"@type": "City", "name": "Lufkin, TX"}, {"@type": "City", "name": "Vidor, TX"}],
-    "slogan": "You Own It. We Clear It.",
-    "knowsAbout": ["Forestry mulching", "Land clearing", "Brush removal", "Fence-line clearing", "Trail cutting", "Lot clearing", "Right-of-way clearing", "Pond and access cleanup"],
-    "hasOfferCatalog": {
-      "@type": "OfferCatalog",
-      "name": "Land Clearing Services",
-      "itemListElement": [
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Forestry Mulching"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Land Clearing"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Brush Removal"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Fence-Line Clearing"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Trail Cutting"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Lot Clearing"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Right-of-Way Clearing"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Pond and Access Cleanup"}}
-      ]
-    }
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://txmulching.com/#website",
+        "url": "https://txmulching.com/",
+        "name": "TX Mulching",
+        "publisher": {
+          "@id": "https://txmulching.com/#business"
+        }
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://txmulching.com/#business",
+        "name": "TX Mulching, LLC",
+        "url": "https://txmulching.com/",
+        "telephone": "+1-903-833-3965",
+        "image": "https://txmulching.com/images/og-image.jpg",
+        "description": "Owner-led forestry mulching, land clearing, brush removal, fence-line clearing, trail cutting, lot clearing, right-of-way clearing, and pond and access cleanup.",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Canton",
+          "addressRegion": "TX",
+          "addressCountry": "US"
+        },
+        "areaServed": [
+          {
+            "@type": "State",
+            "name": "Texas"
+          },
+          {
+            "@type": "AdministrativeArea",
+            "name": "East Texas"
+          },
+          {
+            "@type": "City",
+            "name": "Canton, TX"
+          },
+          {
+            "@type": "City",
+            "name": "Tyler, TX"
+          },
+          {
+            "@type": "City",
+            "name": "Athens, TX"
+          },
+          {
+            "@type": "City",
+            "name": "Longview, TX"
+          },
+          {
+            "@type": "City",
+            "name": "Nacogdoches, TX"
+          },
+          {
+            "@type": "City",
+            "name": "Lufkin, TX"
+          },
+          {
+            "@type": "City",
+            "name": "Vidor, TX"
+          }
+        ],
+        "slogan": "You Own It. We Clear It.",
+        "knowsAbout": [
+          "Forestry mulching",
+          "Land clearing",
+          "Brush removal",
+          "Fence-line clearing",
+          "Trail cutting",
+          "Lot clearing",
+          "Right-of-way clearing",
+          "Pond and access cleanup"
+        ],
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Land Clearing Services",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Forestry Mulching"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Land Clearing"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Brush Removal"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Fence-Line Clearing"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Trail Cutting"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Lot Clearing"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Right-of-Way Clearing"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Pond and Access Cleanup"
+              }
+            }
+          ]
+        },
+        "logo": "https://txmulching.com/apple-touch-icon.png"
+      }
+    ]
   }
   </script>
   <link rel="stylesheet" href="/chat.css">
@@ -186,7 +304,7 @@
     </section>
   </main>
   <footer>
-    <div class="wrap footer-grid"><div><a class="footer-brand" href="#top">TX Mulching</a><p>Owner-led forestry mulching and land clearing from Canton, Texas.</p></div><div><h2>Services</h2><ul><li><a href="/forestry-mulching">Forestry Mulching</a></li><li><a href="#services">Land Clearing</a></li><li><a href="#services">Brush Removal</a></li><li><a href="#services">ROW Clearing</a></li><li><a href="/service-area">Service Area</a></li></ul></div><div><h2>Contact</h2><ul><li><a href="tel:+19038333965">(903) 833-3965</a></li><li><a href="#quote">Request a Quote</a></li><li><a href="/privacy.html">Privacy</a></li></ul></div></div>
+    <div class="wrap footer-grid"><div><a class="footer-brand" href="#top">TX Mulching</a><p>Owner-led forestry mulching and land clearing from Canton, Texas.</p></div><div><h2>Services</h2><ul><li><a href="/forestry-mulching">Forestry Mulching</a></li><li><a href="#services">Land Clearing</a></li><li><a href="#services">Brush Removal</a></li><li><a href="#services">ROW Clearing</a></li><li><a href="/service-area">Service Area</a></li></ul></div><div><h2>Contact</h2><ul><li><a href="tel:+19038333965">(903) 833-3965</a></li><li><a href="#quote">Request a Quote</a></li><li><a href="/privacy">Privacy</a></li></ul></div></div>
     <div class="wrap footer-bottom"><span>© <span id="current-year">2026</span> TX Mulching, LLC. All rights reserved.</span><span>Canton, Texas</span></div>
   </footer>
   <script src="/chat-widget.js" defer></script>

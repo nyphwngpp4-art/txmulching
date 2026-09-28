@@ -1,11 +1,9 @@
 /* GA4 loader + named conversion events.
    Set GA4_ID to the Measurement ID (G-XXXXXXXXXX) from GA4 Admin → Data streams.
    While it is empty nothing loads and txTrack() is a no-op, so the site is safe to deploy first.
-   Events (mark the first three as key events in GA4 Admin → Events):
-     estimate_complete  — instant estimate submitted with name + phone (lead captured)
+   Events (mark both as key events in GA4 Admin → Events):
      quote_submit       — callback form accepted by /api/quote
-     phone_click        — any tel: link tapped (param: link_location)
-     estimate_start     — step 1 of the instant estimate completed */
+     phone_click        — any tel: link tapped (param: link_location) */
 (() => {
   'use strict';
   const GA4_ID = '';

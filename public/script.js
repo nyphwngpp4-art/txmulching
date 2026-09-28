@@ -29,11 +29,31 @@
     });
   });
 
-  const video = document.querySelector('.hero video');
-  if (video && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    video.removeAttribute('autoplay');
-    video.pause();
+  // Hero: the still image is the page's first paint. The video loads after the
+  // page does, fades in only once it is actually playing, and is skipped for
+  // reduced-motion and data-saver visitors.
+  const video = document.querySelector('.hero-media video');
+  const videoToggle = document.getElementById('hero-video-toggle');
+  const skipVideo = window.matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData === true;
+  if (video && !skipVideo) {
+    const startVideo = () => {
+      video.src = window.matchMedia('(orientation: landscape)').matches ? video.dataset.landscape : video.dataset.portrait;
+      video.muted = true;
+      video.addEventListener('playing', () => {
+        video.classList.add('is-playing');
+        if (videoToggle) videoToggle.hidden = false;
+      }, { once: true });
+      video.play().catch(() => { /* autoplay blocked (e.g. iOS Low Power Mode): the still image stays */ });
+    };
+    if (document.readyState === 'complete') startVideo();
+    else window.addEventListener('load', startVideo, { once: true });
   }
+  videoToggle?.addEventListener('click', () => {
+    const pausing = !video.paused;
+    if (pausing) video.pause();
+    else video.play().catch(() => {});
+    videoToggle.setAttribute('aria-pressed', String(pausing));
+  });
 
   const year = document.getElementById('current-year');
   if (year) year.textContent = String(new Date().getFullYear());

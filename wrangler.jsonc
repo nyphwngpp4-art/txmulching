@@ -8,8 +8,9 @@
     // Only public/ is published; code, config, docs and secrets stay out of it.
     "directory": "public",
     "binding": "ASSETS",
-    // API routes never fall through to static assets.
-    "run_worker_first": ["/api/*"]
+    // API routes never fall through to static assets; video goes through the
+    // Worker for byte-range (206) support.
+    "run_worker_first": ["/api/*", "/video/*"]
   },
   "observability": {
     "enabled": true

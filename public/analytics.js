@@ -6,7 +6,7 @@
      phone_click        — any tel: link tapped (param: link_location) */
 (() => {
   'use strict';
-  const GA4_ID = '';
+  const GA4_ID = 'G-YJD63RVV4V';
 
   window.dataLayer = window.dataLayer || [];
   function gtag() { window.dataLayer.push(arguments); }

@@ -4,7 +4,7 @@ Conversion = a lead: `quote_submit` or `phone_click`. The callback form (emailed
 
 ## What's shipped
 
-- **Conversion tracking** (`public/analytics.js`): GA4 with named events. It stays inactive until `GA4_ID` is set.
+- **Conversion tracking** (`public/analytics.js`): GA4 (`G-YJD63RVV4V`, live since 2026-09-29) with named events.
   - `quote_submit`: callback form accepted by `/api/quote`.
   - `phone_click`: any `tel:` link. Param: `link_location` (id of the nearest section).
 - **Cloudflare Web Analytics**: page views and Core Web Vitals, cookieless, already collecting (Cloudflare dashboard → Web Analytics). The CSP used to block its beacon.
@@ -17,7 +17,7 @@ Schema is Service + BreadcrumbList on these pages and LocalBusiness + WebSite on
 
 ## Owner to-do (in order)
 
-1. **GA4**: create a property and web data stream for txmulching.com, paste the `G-…` ID into `GA4_ID` in `public/analytics.js`, and deploy. In Admin → Events, mark `quote_submit` and `phone_click` as key events (they appear after the first hit).
+1. **GA4**: property and web stream created, `G-YJD63RVV4V` live. Remaining: in Admin → Data display → Key events, add `quote_submit` and `phone_click` (or mark them once they appear under Events after the first hit).
 2. **Search Console**: add a Domain property. Verify with a DNS TXT record in Cloudflare, submit `https://txmulching.com/sitemap.xml`, then request indexing for `/forestry-mulching` and `/service-area`. Link Search Console to GA4.
 3. **Google Business Profile**:
    - Keep **Excavating contractor** as a *secondary* category. The owner does excavation himself, and that category drives the "excavating contractor in canton, tx" searches (19), which is your #2 search. Make the closest land-clearing or forestry-mulching category GBP offers the *primary*, and add excavation services to the profile.

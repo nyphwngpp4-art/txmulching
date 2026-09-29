@@ -18,7 +18,7 @@ Owner-led forestry mulching and land-clearing website for TX Mulching, LLC in Ca
   - `styles.css`, `chat.css`: responsive custom CSS without Tailwind or runtime CSS dependencies
   - `script.js`: navigation, hero video, before/after gallery, and quote form
   - `chat-widget.js`: floating text/voice chat
-  - `analytics.js`: GA4 loader and conversion events (inactive until `GA4_ID` is set)
+  - `analytics.js`: GA4 loader (property `G-YJD63RVV4V`) and conversion events
   - `fonts/`, `images/`, `video/`: self-hosted fonts and generated media (see Media)
   - `_headers`: security and cache response headers; `_redirects`: `/estimate` → `/#quote`
 - `src/worker.js`: Worker entry (see Hosting)

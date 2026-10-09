@@ -15,6 +15,49 @@
     "run_worker_first": ["/api/*", "/video/*"]
   },
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  // Retries leads that were stored in D1 but not yet accepted by Apps Script.
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  // txm-leads. Migration 0001 is already applied on this database.
+  "d1_databases": [
+    {
+      "binding": "LEADS",
+      "database_name": "txm-leads",
+      "database_id": "757fb9fe-c7f6-4d08-99b4-00f948de0733",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Secrets stay in the Cloudflare dashboard (`wrangler secret put`). Do not
+  // add a "vars" block for these names. On 28 Sep 2026 GOOGLE_SCRIPT_URL was
+  // a plain dashboard var, and a deploy deleted it because this file did not
+  // list it. Deploy inherits secret_text and drops undeclared plain vars.
+  // `required` only tells deploy to keep the existing secret and fail if it
+  // is missing. It does not put the value in git.
+  "secrets": {
+    "required": [
+      "GOOGLE_SCRIPT_URL",
+      "APPS_SCRIPT_TOKEN",
+      "PHOTO_LINK_SECRET"
+    ]
+  },
+  // Photos go to Google Drive through Apps Script. Leave R2 out of this file
+  // until the account has R2 and the bucket exists. A binding whose bucket
+  // does not exist makes `wrangler deploy` fail. To turn the optional path
+  // on later, add:
+  // "r2_buckets": [
+  //   { "binding": "LEAD_PHOTOS", "bucket_name": "txm-lead-photos" }
+  // ]
+  // These namespaces are created on deploy. Limits are per Cloudflare location.
+  "ratelimits": [
+    { "name": "QUOTE_RL", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
+    { "name": "PHOTO_RL", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },
+    { "name": "CHAT_RL", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
+    { "name": "VOICE_RL", "namespace_id": "1004", "simple": { "limit": 5, "period": 60 } }
+  ]
 }

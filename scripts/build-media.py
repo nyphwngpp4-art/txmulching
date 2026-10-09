@@ -29,11 +29,14 @@ LOOK = (
 )
 X264 = ['-c:v', 'libx264', '-preset', 'slower', '-crf', '32', '-profile:v', 'high', '-level', '4.0',
         '-pix_fmt', 'yuv420p', '-g', '48', '-an', '-movflags', '+faststart']
+# Phones: 14s at 540-wide, CRF 34, aiming for about 1 MB. Landscape stays the longer loop.
+X264_PORTRAIT = ['-c:v', 'libx264', '-preset', 'slower', '-crf', '34', '-profile:v', 'high', '-level', '4.0',
+                 '-pix_fmt', 'yuv420p', '-g', '48', '-an', '-movflags', '+faststart']
 
 # Portrait for phones; a 16:9 band for wider screens, placed low enough to keep
 # the machine and the freshly mulched ground in frame for the whole loop.
 HERO_VIDEOS = {
-    'hero-portrait': f'fps=24,{LOOK},scale=720:-2:flags=lanczos,hqdn3d=3:3:4:4,format=yuv420p',
+    'hero-portrait': f'fps=24,{LOOK},scale=540:-2:flags=lanczos,hqdn3d=3:3:4:4,format=yuv420p',
     'hero-landscape': f'fps=24,crop=1280:720:0:1000,{LOOK},hqdn3d=3:3:4:4,format=yuv420p',
 }
 
@@ -43,7 +46,7 @@ OG_FRAME_SECONDS = 6.267
 OG_CROP = 'crop=1280:672:0:1050,scale=1200:630:flags=lanczos'
 
 GALLERY = ['before-1', 'after-1', 'before-2', 'after-2', 'before-3', 'after-3']
-GALLERY_WIDTHS = (640, 1000)
+GALLERY_WIDTHS = (640, 800, 1000)
 
 
 def ffmpeg(*args):
@@ -53,7 +56,7 @@ def ffmpeg(*args):
 def save_pair(image, stem, icc=None):
     """Write AVIF (preferred) and JPEG (fallback) versions of one image."""
     extra = {'icc_profile': icc} if icc else {}
-    image.save(IMAGES / f'{stem}.avif', 'AVIF', quality=50, speed=4, **extra)
+    image.save(IMAGES / f'{stem}.avif', 'AVIF', quality=40, speed=6, **extra)
     image.save(IMAGES / f'{stem}.jpg', 'JPEG', quality=72, optimize=True, progressive=True, **extra)
 
 
@@ -62,7 +65,9 @@ def build_hero():
     with tempfile.TemporaryDirectory() as tmp:
         for name, filters in HERO_VIDEOS.items():
             out = VIDEO / f'{name}.mp4'
-            ffmpeg('-i', str(source), '-vf', filters, *X264, str(out))
+            codec = X264_PORTRAIT if name == 'hero-portrait' else X264
+            duration = ['-t', '14'] if name == 'hero-portrait' else []
+            ffmpeg('-i', str(source), *duration, '-vf', filters, *codec, str(out))
             # Poster = the video's own first frame, so the fade-in never jumps.
             frame = pathlib.Path(tmp) / f'{name}.png'
             ffmpeg('-i', str(out), '-frames:v', '1', str(frame))

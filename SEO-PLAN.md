@@ -52,4 +52,5 @@ Revisit the automated agent setup (brief, state and log files, scheduled run) on
 | 2026-09-24 | GA4 events, /forestry-mulching, /service-area, homepage internal links | all | baseline |
 | 2026-09-24 | Removed published per-acre pricing; excavation described as done by the owner | /forestry-mulching, /service-area | baseline |
 | 2026-09-28 | Retired the instant estimator and all pricing; callback form + phone are the only lead paths; `/estimate` 301s to the form | all | baseline |
+| 2026-10-09 | `/estimate` is a stepped intake again (no published prices). Homepage callback form stays. Demo links use `?demo=1` | /estimate | |
 | 2026-09-28 | Performance: hero video 11.8 → 2.5 MB, gallery 6.7 → 0.3–0.8 MB, self-hosted fonts, byte-range video for iPhones; favicon, 404 page, WebSite schema, 1200x630 preview image; Cloudflare Web Analytics unblocked | all | baseline |

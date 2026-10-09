@@ -1,53 +1,34 @@
-// Cloudflare Pages Function: POST /api/voice-token
+// Worker route: POST /api/voice-token
 // Mints a short-lived ephemeral client secret for the Grok Voice realtime API
 // so the browser can connect to wss://api.x.ai without exposing XAI_API_KEY.
+//
+// Origin alone is not enough: a non-browser client can set it. Sec-Fetch-Site
+// blocks ordinary cross-site browser calls and naive curl. A client that
+// forges that header still needs a Turnstile token once TURNSTILE_SECRET is set.
 
-const WINDOW_MS = 5 * 60 * 1000;
-const MAX_REQUESTS = 10;
-const requestLog = new Map();
-
-function json(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
-  });
-}
-
-function getClientIp(request) {
-  return request.headers.get('cf-connecting-ip')
-    || String(request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim();
-}
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const existing = (requestLog.get(ip) || []).filter((time) => now - time < WINDOW_MS);
-  if (existing.length >= MAX_REQUESTS) return true;
-  existing.push(now);
-  requestLog.set(ip, existing);
-  return false;
-}
-
-function validOrigin(request, env) {
-  const origin = request.headers.get('origin');
-  // Browsers always send Origin on these POSTs; a request without one is a
-  // script spending xAI credit, not a visitor.
-  if (!origin) return false;
-  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
-  if (allowed.length) return allowed.includes(origin);
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-  return origin === `https://${host}` || origin === `http://${host}`;
-}
+import {
+  browserSameOrigin,
+  isRateLimited,
+  json,
+  methodNotAllowed,
+  validOrigin,
+  verifyTurnstile
+} from './_lib.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
 
-  if (request.method !== 'POST') {
-    return json(405, { error: 'Method not allowed.' });
-  }
+  if (request.method !== 'POST') return methodNotAllowed('POST');
   if (!validOrigin(request, env)) return json(403, { error: 'Request origin is not allowed.' });
-  if (isRateLimited(getClientIp(request))) {
+  if (!browserSameOrigin(request)) return json(403, { error: 'Request origin is not allowed.' });
+  if (await isRateLimited(request, env, 'VOICE_RL', 5, 60_000)) {
     return json(429, { error: 'Too many voice sessions. Please wait a few minutes.' });
   }
+
+  const parsed = await request.json().catch(() => ({}));
+  const turnstile = await verifyTurnstile(request, env, parsed?.turnstileToken || parsed?.['cf-turnstile-response']);
+  if (!turnstile.ok) return json(403, { error: turnstile.error });
+
   if (!env.XAI_API_KEY) {
     return json(503, { error: 'Voice has not been activated yet.' });
   }
@@ -71,16 +52,15 @@ export async function onRequest(context) {
         || (typeof data?.error === 'string' ? data.error : '')
         || data?.detail
         || JSON.stringify(data).slice(0, 300);
-      console.error('voice-token upstream error', upstream.status, detail || 'unknown');
+      console.error(JSON.stringify({ event: 'voice_token_upstream', status: upstream.status, detail: detail || 'unknown' }));
       return json(502, { error: 'Voice is temporarily unavailable.' });
     }
-    // Pass through only what the client needs.
     const value = data.value || data.client_secret?.value;
     const expires_at = data.expires_at || data.client_secret?.expires_at;
     if (!value) return json(502, { error: 'Voice token response was malformed.' });
     return json(200, { value, expires_at });
   } catch (error) {
-    console.error('voice-token failed', error?.name || error);
+    console.error(JSON.stringify({ event: 'voice_token_failed', error: error?.name || String(error) }));
     return json(502, { error: 'Voice is temporarily unavailable.' });
   }
 }

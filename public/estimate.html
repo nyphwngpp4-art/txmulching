@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="/estimate-boot.js"></script>
+  <script src="/analytics.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Free Land Clearing Quote | TX Mulching</title>
+  <meta name="description" content="Start a land-clearing quote with TX Mulching in Canton, Texas. Share the property, a few photos, and the best time for a callback.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0c0b08">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="canonical" href="https://txmulching.com/estimate">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TX Mulching">
+  <meta property="og:title" content="Free Land Clearing Quote | TX Mulching">
+  <meta property="og:description" content="Send the property location and photos of the brush. The owner reviews them and calls you back.">
+  <meta property="og:url" content="https://txmulching.com/estimate">
+  <meta property="og:image" content="https://txmulching.com/images/og-image.jpg">
+  <link rel="preload" href="/fonts/bebas-neue-latin-v16.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/inter-latin-v20.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/estimate.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://txmulching.com/estimate#service",
+        "name": "Land clearing quote",
+        "serviceType": "Forestry mulching and land clearing",
+        "url": "https://txmulching.com/estimate",
+        "description": "Quote request for forestry mulching and land clearing from TX Mulching in Canton, Texas. No prices are published; the owner calls back after reviewing the property.",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://txmulching.com/#business",
+          "name": "TX Mulching, LLC",
+          "telephone": "+1-903-833-3965",
+          "url": "https://txmulching.com/"
+        },
+        "areaServed": [
+          { "@type": "AdministrativeArea", "name": "East Texas" },
+          { "@type": "State", "name": "Texas" }
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://txmulching.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Free land clearing quote", "item": "https://txmulching.com/estimate" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="estimate-page">
+  <header class="site-header">
+    <div class="wrap nav-shell">
+      <a class="logo" href="/" aria-label="TX Mulching home">
+        <span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M18 3c-2 0-5 1-7 3-2-2-5-1-6 1-2 0-3 2-2 4-2 1-2 4 0 5-1 2 0 4 2 5 0 2 2 3 4 2 0 2 2 3 4 2 1 2 3 2 5 1 2 1 4 1 5-1 2 1 4 0 4-2 2 1 4-1 4-3 2-1 3-4 1-5 1-2-1-5-3-6-1-2-3-3-5-2-2-2-4-2-7-2z" fill="currentColor"/><rect x="16.5" y="24" width="3" height="8" rx="1" fill="currentColor"/></svg></span>
+        <span class="logo-copy"><span class="logo-eyebrow">Canton, Texas</span><span class="logo-name">TX Mulching</span></span>
+      </a>
+      <a class="button button-primary header-call" href="tel:+19038333965">Call (903) 833-3965</a>
+    </div>
+  </header>
+  <div id="demo-banner" class="demo-banner" hidden>
+    <div class="wrap demo-banner-inner">
+      <p>Live demo by Agavi AI — demo submissions are not sent to TX Mulching.</p>
+      <button type="button" id="demo-dismiss">Dismiss</button>
+    </div>
+  </div>
+  <main class="estimate-main">
+    <div class="wrap">
+      <noscript>
+        <p class="noscript-note">This form works without JavaScript. Fill in each section, then tap Send. If the page comes back after you send it, we received the request — call (903) 833-3965 and give your name.</p>
+      </noscript>
+      <div id="estimate-success" class="estimate-success" role="status" aria-live="polite" tabindex="-1">
+        <h2>Request received.</h2>
+        <p>The owner looks over what you sent and calls you back to talk through the job. Most jobs get a quick site walk before a firm quote.</p>
+        <p class="reference">Reference <strong id="request-id"></strong></p>
+        <p><a class="button button-primary" href="tel:+19038333965">Call (903) 833-3965</a></p>
+        <article id="owner-alert" class="alert-card" hidden>
+          <div class="alert-top"><span>TX Mulching</span><span>sent 2 seconds ago</span></div>
+          <h3>Here's the alert the owner just got</h3>
+          <p id="alert-summary"></p>
+          <p id="alert-phone"></p>
+          <p id="alert-job"></p>
+          <p id="alert-map"></p>
+          <div id="alert-photos" class="alert-photos"></div>
+        </article>
+      </div>
+      <form id="estimate-form" method="post" action="/api/quote" enctype="multipart/form-data">
+        <div class="estimate-intro">
+          <div class="progress" id="progress" role="progressbar" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1" aria-label="Quote progress">
+            <p class="progress-label" id="progress-label">Step 1 of 5</p>
+            <div class="progress-track"><span class="progress-fill" id="progress-fill"></span></div>
+          </div>
+          <h1>Get your land-clearing quote started</h1>
+          <p class="sub">About a minute. Send photos and the property location. The owner reviews them and calls you back.</p>
+        </div>
+        <div id="form-error" class="form-status form-error" role="alert" hidden></div>
+        <input type="hidden" name="intake" value="estimate">
+        <input type="hidden" name="elapsedMs" id="elapsed-ms" value="">
+        <input type="hidden" name="demo" id="demo-field" value="">
+        <input type="hidden" name="ref" id="ref-field" value="">
+        <input type="hidden" name="utm_source" id="utm-source" value="">
+        <input type="hidden" name="utm_medium" id="utm-medium" value="">
+        <input type="hidden" name="utm_campaign" id="utm-campaign" value="">
+        <input type="hidden" name="utm_content" id="utm-content" value="">
+        <input type="hidden" name="utm_term" id="utm-term" value="">
+        <input type="hidden" name="photoKeys" id="photo-keys" value="[]">
+        <div class="honeypot" aria-hidden="true"><label for="website">Leave this field blank</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
+
+        <section class="estimate-step is-current" data-step="1">
+          <h2>The job</h2>
+          <fieldset class="tile-grid" id="service-set">
+            <legend>What do you need done?</legend>
+            <label class="tile"><input type="radio" name="serviceType" value="Forestry Mulching" required> Forestry mulching</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Land Clearing"> Land clearing</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Brush Removal"> Brush removal</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Fence-Line Clearing"> Fence-line clearing</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Trail Cutting"> Trail cutting</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Lot Clearing"> Lot clearing</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Right-of-Way Clearing"> Right-of-way clearing</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Pond &amp; Access Cleanup"> Pond and access cleanup</label>
+            <label class="tile"><input type="radio" name="serviceType" value="Not Sure / Multiple"> Not sure / a few things</label>
+          </fieldset>
+          <fieldset class="tile-grid cols-2" id="acreage-set">
+            <legend>About how much land?</legend>
+            <label class="tile"><input type="radio" name="acreage" value="Under 1 acre" required> Under 1 acre</label>
+            <label class="tile"><input type="radio" name="acreage" value="1-3 acres"> 1–3 acres</label>
+            <label class="tile"><input type="radio" name="acreage" value="3-10 acres"> 3–10 acres</label>
+            <label class="tile"><input type="radio" name="acreage" value="10-25 acres"> 10–25 acres</label>
+            <label class="tile"><input type="radio" name="acreage" value="25+ acres"> 25+ acres</label>
+          </fieldset>
+          <fieldset class="tile-grid" id="density-set">
+            <legend>How thick is the brush?</legend>
+            <label class="tile"><input type="radio" name="density" value="Can walk through" required> Can walk through</label>
+            <label class="tile"><input type="radio" name="density" value="Can drive through"> Can drive through</label>
+            <label class="tile"><input type="radio" name="density" value="Wall of trees"> Wall of trees</label>
+          </fieldset>
+          <p id="step-1-error" class="field-error" hidden></p>
+        </section>
+
+        <section class="estimate-step" data-step="2">
+          <h2>The property</h2>
+          <div class="field">
+            <label for="address">Street address or nearest road</label>
+            <input id="address" name="address" type="text" autocomplete="street-address" maxlength="160" required enterkeyhint="next" aria-describedby="address-error">
+            <p id="address-error" class="field-error" hidden></p>
+          </div>
+          <div class="field">
+            <label for="city">City</label>
+            <input id="city" name="city" type="text" autocomplete="address-level2" maxlength="80" required enterkeyhint="next" aria-describedby="city-error">
+            <p id="city-error" class="field-error" hidden></p>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="county">County <span class="field-help">(optional)</span></label>
+              <input id="county" name="county" type="text" maxlength="80" enterkeyhint="next">
+            </div>
+            <div class="field">
+              <label for="zipcode">ZIP code <span class="field-help">(optional)</span></label>
+              <input id="zipcode" name="zipcode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="10" placeholder="75103" enterkeyhint="next" aria-describedby="zipcode-error area-note">
+              <p id="zipcode-error" class="field-error" hidden></p>
+            </div>
+          </div>
+          <p id="area-note" class="area-note" hidden>Outside our usual area around Canton. We'll still call.</p>
+        </section>
+
+        <section class="estimate-step" data-step="3">
+          <h2>Photos</h2>
+          <div class="field">
+            <label for="photos">Add photos of the brush (optional, up to 6)</label>
+            <input id="photos" name="photos" type="file" accept="image/*" multiple>
+            <p class="field-help">Optional, up to 6. They are sent with your request so the owner can see the brush.</p>
+          </div>
+          <ul id="photo-list" class="photo-list"></ul>
+          <p id="photo-error" class="field-error" hidden></p>
+        </section>
+
+        <section class="estimate-step" data-step="4">
+          <h2>Timing</h2>
+          <fieldset class="tile-grid" id="timeline-set">
+            <legend>When do you want the work done?</legend>
+            <label class="tile"><input type="radio" name="timeline" value="ASAP" required> ASAP</label>
+            <label class="tile"><input type="radio" name="timeline" value="Within a month"> Within a month</label>
+            <label class="tile"><input type="radio" name="timeline" value="1-3 months"> 1–3 months</label>
+            <label class="tile"><input type="radio" name="timeline" value="Just planning"> Just planning</label>
+          </fieldset>
+          <fieldset class="tile-grid" id="window-set">
+            <legend>Best time for a callback?</legend>
+            <label class="tile"><input type="radio" name="callbackWindow" value="Morning" required> Morning</label>
+            <label class="tile"><input type="radio" name="callbackWindow" value="Afternoon"> Afternoon</label>
+            <label class="tile"><input type="radio" name="callbackWindow" value="Evening"> Evening</label>
+          </fieldset>
+          <p id="step-4-error" class="field-error" hidden></p>
+        </section>
+
+        <section class="estimate-step" data-step="5">
+          <h2>How do we reach you?</h2>
+          <div class="field">
+            <label for="name">Your name</label>
+            <input id="name" name="name" type="text" autocomplete="name" maxlength="80" required enterkeyhint="next" aria-describedby="name-error">
+            <p id="name-error" class="field-error" hidden></p>
+          </div>
+          <div class="field">
+            <label for="phone">Mobile phone</label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" required placeholder="(903) 555-0100" enterkeyhint="next" aria-describedby="phone-error">
+            <p id="phone-error" class="field-error" hidden></p>
+          </div>
+          <div class="field">
+            <label for="email">Email <span class="field-help">(optional)</span></label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="120" placeholder="you@example.com" enterkeyhint="send" aria-describedby="email-error">
+            <p id="email-error" class="field-error" hidden></p>
+          </div>
+          <p class="form-note">What happens next: the owner reviews this and calls you back. Most jobs get a quick site walk before a firm quote.</p>
+          <div id="turnstile-slot"></div>
+        </section>
+
+        <div class="step-actions">
+          <button class="button button-secondary" id="back-button" type="button" hidden>Back</button>
+          <button class="button button-primary step-next" id="next-button" type="button">Continue</button>
+          <button class="button button-primary no-js-submit" type="submit">Send to TX Mulching</button>
+        </div>
+      </form>
+    </div>
+  </main>
+  <footer class="estimate-footer">
+    <div class="wrap footer-bottom">
+      <span>© <span id="current-year">2026</span> TX Mulching, LLC</span>
+      <span><a href="/privacy">Privacy</a> · Canton, Texas</span>
+    </div>
+  </footer>
+  <script src="/turnstile.js" defer></script>
+  <script src="/estimate.js" defer></script>
+</body>
+</html>

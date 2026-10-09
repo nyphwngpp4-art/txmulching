@@ -15,13 +15,13 @@
   root.className = 'chat-widget';
   root.innerHTML = `
     <button class="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel" aria-label="Open chat">
-      <span class="chat-toggle-icon" aria-hidden="true">&#128172;</span>
+      <svg class="chat-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
     </button>
-    <div class="chat-panel" id="chat-panel" hidden>
+    <div class="chat-panel" id="chat-panel" role="dialog" aria-modal="true" aria-labelledby="chat-title" hidden>
       <div class="chat-header">
         <div class="chat-brand-mark" aria-hidden="true">TX</div>
         <div class="chat-header-copy">
-          <h2>TX Mulching Assistant</h2>
+          <h2 id="chat-title">TX Mulching Assistant</h2>
           <p>Ask about clearing your land</p>
         </div>
         <button class="chat-close" type="button" aria-label="Close chat">&times;</button>
@@ -33,7 +33,7 @@
       <form class="chat-form">
         <div class="chat-input-row">
           <input type="text" name="message" placeholder="Type a question&hellip;" autocomplete="off" maxlength="1000">
-          <button class="chat-mic" type="button" aria-pressed="false" aria-label="Talk with Grok Voice">&#127908;</button>
+          <button class="chat-mic" type="button" aria-pressed="false" aria-label="Talk with Grok Voice"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v4a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></button>
           <button type="submit">Send</button>
         </div>
         <div class="chat-error" hidden></div>
@@ -85,8 +85,32 @@
     if (open) input.focus();
     if (!open) stopVoice();
   });
-  function closePanel() { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); stopVoice(); }
+  function closePanel() {
+    if (panel.hidden) return;
+    panel.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    stopVoice();
+    toggle.focus();
+  }
   closeBtn.addEventListener('click', closePanel);
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || panel.hidden) return;
+    event.stopPropagation();
+    closePanel();
+  });
+  document.addEventListener('focusin', (event) => {
+    const tag = event.target && event.target.tagName;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) && !root.contains(event.target)) {
+      document.body.classList.add('form-field-focus');
+    }
+  });
+  document.addEventListener('focusout', () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      const tag = active && active.tagName;
+      if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) document.body.classList.remove('form-field-focus');
+    }, 0);
+  });
 
   /* ---------- Text chat ---------- */
   form.addEventListener('submit', async (e) => {
@@ -169,7 +193,13 @@
     clearError();
     micBtn.disabled = true;
     try {
-      const tokRes = await fetch('/api/voice-token', { method: 'POST' });
+      let turnstileToken = '';
+      if (window.txTurnstile) turnstileToken = await window.txTurnstile.token();
+      const tokRes = await fetch('/api/voice-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ turnstileToken })
+      });
       const tok = await tokRes.json().catch(() => ({}));
       const secret = tok.value || tok.client_secret?.value;
       if (!tokRes.ok || !secret) throw new Error(tok.error || 'Voice is not activated yet.');
@@ -194,6 +224,9 @@
         ws.send(JSON.stringify({ type: 'session.update', session }));
         audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
         const srcNode = audioCtx.createMediaStreamSource(mediaStream);
+        // ScriptProcessorNode is deprecated. Planned follow-up: move this PCM
+        // tap into an AudioWorklet served from /audio-worklet.js and keep this
+        // node only when AudioWorklet is missing (older iOS).
         procNode = audioCtx.createScriptProcessor(4096, 1, 1);
         srcNode.connect(procNode); procNode.connect(audioCtx.destination);
         procNode.onaudioprocess = (ev) => {
@@ -205,7 +238,7 @@
         micBtn.classList.add('on');
         micBtn.setAttribute('aria-pressed', 'true');
         micBtn.disabled = false;
-        bubble('assistant', '🎙 Voice on — go ahead and talk. Tap the mic again to stop.');
+        bubble('assistant', 'Voice on — go ahead and talk. Tap the mic again to stop.');
       };
 
       ws.onmessage = (ev) => {

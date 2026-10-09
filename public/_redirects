@@ -1,3 +1,3 @@
-# The instant estimator was retired; old links land on the quote form.
-/estimate /#quote 301
-/estimate.html /#quote 301
+# /estimate is a real page again. Do not 301 it. Browsers that cached the old
+# permanent redirect still need a new query string, for example
+# /estimate?ref=p07&demo=1

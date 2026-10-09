@@ -18,106 +18,13 @@ Quote Leads"** Sheet and then sends alerts.
 Email only — no SMS gateways (owner decision, Aug 2026). Every lead goes to
 Kim, Hal, the business address, and Jay as a backstop.
 
-Replace the whole script file with the version below, run
-`testNotification` once from the editor to confirm delivery, then
-**Deploy → Manage deployments → pencil → Version: New version → Deploy**.
-Editing the code alone changes nothing in production.
+The script that should be deployed is [`apps-script/Code.gs`](apps-script/Code.gs).
+Follow [`apps-script/README.md`](apps-script/README.md): paste it into the Apps
+Script project, set the `TOKEN` script property, deploy a new version, and set
+the Worker secret `APPS_SCRIPT_TOKEN` to the same value. Editing the file in
+git does nothing in production until that deploy.
 
-```js
-var SHEET_ID = '1LoWcYng7Je_KaVSGKdFVTAKmNGSQ06sGuFVk_8pHqoI';
-
-// Everyone who gets the full lead by email.
-var NOTIFY_EMAILS = [
-  'messamoreh@gmail.com',     // Hal
-  'messamore.gk@gmail.com',   // Kim
-  'info@txmulching.com',      // business address
-  'j.messamore@gmail.com'     // backstop — remove if not wanted
-];
-
-function doPost(e) {
-  var data = {};
-  try {
-    data = JSON.parse(e.postData.contents);
-  } catch (err) {
-    data = (e && e.parameter) || {};
-  }
-
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-  var sheet = ss.getSheetByName('Sheet1') || ss.getSheets()[0];
-
-  sheet.appendRow([
-    new Date(),
-    data.name || '',
-    data.phone || '',
-    data.email || '',
-    data.zipcode || '',
-    data.acreage || '',
-    data.serviceType || '',
-    data.description || '',
-    data.requestId || ''      // column I "Request ID" — matches the Worker log
-  ]);
-
-  try {
-    notifyLead_(data);
-  } catch (err) {
-    console.error('notify failed', err);
-  }
-
-  return ContentService
-    .createTextOutput(JSON.stringify({ ok: true }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function notifyLead_(data) {
-  var name = data.name || 'Unknown';
-  var phone = data.phone || 'no phone';
-
-  var body = [
-    'Name: ' + name,
-    'Phone: ' + phone,
-    'Email: ' + (data.email || '—'),
-    'ZIP: ' + (data.zipcode || '—'),
-    'Acreage: ' + (data.acreage || '—'),
-    'Service: ' + (data.serviceType || '—'),
-    'Details: ' + (data.description || '—'),
-    'Reference: ' + (data.requestId || '—'),
-    '',
-    'Call back: ' + phone,
-    'All leads: https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit'
-  ].join('\n');
-
-  // One email per recipient so a single bad address cannot block the rest.
-  NOTIFY_EMAILS.forEach(function (to) {
-    try {
-      MailApp.sendEmail({
-        to: to,
-        name: 'TX Mulching Leads',                    // display name in the inbox
-        replyTo: data.email || 'info@txmulching.com', // Reply goes to the customer
-        subject: 'New TX Mulching lead: ' + name + ' (' + phone + ')',
-        body: body
-      });
-    } catch (err) {
-      console.error('email failed for ' + to, err);
-    }
-  });
-}
-
-// Run once from the editor to confirm delivery to every inbox.
-// Sends a clearly-labelled test to all recipients.
-function testNotification() {
-  notifyLead_({
-    name: 'TEST — delete me',
-    phone: '(555) 010-0000',
-    acreage: '5 acres',
-    serviceType: 'Forestry Mulching',
-    description: 'Test of lead notifications.'
-  });
-}
-```
-
-Why the per-recipient loop matters: `MailApp.sendEmail` with a comma list
-fails as a unit. If one address bounces, nobody gets alerted — the exact
-failure mode that would silently recreate the original problem.
+The current script sends one email per lead, with the other owners in BCC, so a burst uses one MailApp call instead of four. If that group send throws, it falls back to one recipient at a time so a single bad address cannot hide the lead. It also refuses posts that do not carry `TOKEN`, prefixes a leading apostrophe on values that would become Sheet formulas, and writes the extra intake columns (address, density, timeline, callback window, photo links, ref).
 
 Sender identity: MailApp always sends from the Google account that owns the
 script (agavi.aiconsulting@gmail.com); only the display name is changeable.
@@ -189,17 +96,27 @@ into a Worker secret, old deployment archived.
    Anyone. Copy the new `/exec` URL.
 3. Cloudflare → Workers & Pages → `txmulching` → Settings → Variables and
    Secrets → **Add** → type Secret, name `GOOGLE_SCRIPT_URL`, value = the
-   new URL. Takes effect immediately; the Worker prefers the secret over
-   the fallback baked into `quote.js`.
+   new URL. The Worker reads only this secret. There is no URL left in the source.
 4. Submit the site's callback form once and confirm the row lands with a
    Request ID in column I and the alert emails arrive.
 5. Back in Apps Script: **Deploy → Manage deployments → archive the old
    deployment.** The leaked URL now returns an error.
-6. Tell Jay's session it's done; the fallback URL is then removed from
-   `quote.js` so the secret is the only source of truth.
+6. The fallback URL has already been removed from the Worker. After the
+   secret is confirmed, archive the old deployment if that was not done in
+   step 5.
 
 ## Open items
 
-- Part 3 rotation (steps above), then remove the fallback from `quote.js`.
+- `GOOGLE_SCRIPT_URL`, `APPS_SCRIPT_TOKEN`, and `PHOTO_LINK_SECRET` are Worker
+  secrets. Keep them secrets. A plain var is wiped on deploy if
+  `wrangler.jsonc` does not list it (that happened to `GOOGLE_SCRIPT_URL` on
+  28 Sep 2026).
+- D1 database `txm-leads` exists and migration `0001` is applied. Photos go
+  to Google Drive through `apps-script/Code.gs`, not R2. Redeploy that script
+  and run `authorizePhotos` once. Full list: `docs/BEFORE-MERGE.md`.
 - Decide on the iCloud+ → Cloudflare Email Routing move (Part 2). Not
   required for alerts to work — the script emails Kim and Hal directly.
+  Do not turn on Email Routing `send_email` as the backup channel unless
+  that migration is accepted; it would replace the iCloud MX records.
+  `RESEND_API_KEY` + `BACKUP_ALERT_EMAIL`, or `BACKUP_ALERT_URL`, is the
+  backup path that does not touch DNS.

@@ -1,0 +1,203 @@
+/* /estimate only. The shared stylesheet supplies type, color, and buttons. */
+
+.estimate-page .nav-shell { min-height: 58px; }
+.estimate-page .logo-mark { width: 36px; height: 36px; padding: 5px; }
+.estimate-page .logo-name { font-size: 22px; }
+.estimate-page .header-call { min-height: 42px; padding: 8px 14px; font-size: 16px; }
+
+.demo-banner {
+  background: #3d3420;
+  color: var(--cream);
+  border-bottom: 1px solid var(--amber);
+}
+.demo-banner[hidden] { display: none; }
+.demo-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.demo-banner p { margin: 0; }
+.demo-banner button {
+  margin-left: auto;
+  min-height: 36px;
+  padding: 6px 10px;
+  color: var(--cream);
+  background: transparent;
+  border: 1px solid rgba(242, 234, 214, .4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.estimate-main { padding: 18px 0 48px; }
+.estimate-intro h1 {
+  margin: 8px 0 6px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(34px, 9vw, 52px);
+  font-weight: 400;
+  letter-spacing: .03em;
+  line-height: .95;
+  text-transform: uppercase;
+}
+.estimate-intro .sub { margin: 0 0 14px; color: rgba(242, 234, 214, .88); font-size: 16px; }
+
+.progress { margin: 0 0 14px; }
+html:not(.js) .progress { display: none; }
+.progress-label { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+.progress-track { height: 6px; background: #2a2822; border-radius: 99px; overflow: hidden; }
+.progress-fill { display: block; height: 100%; width: 20%; background: var(--amber); }
+
+.estimate-step { margin-bottom: 18px; }
+html.js .estimate-step { display: none; }
+html.js .estimate-step.is-current { display: block; }
+.estimate-step h2 {
+  margin: 0 0 10px;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tile-grid { display: grid; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; }
+.tile-grid legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--cream);
+  font-size: 15px;
+  font-weight: 700;
+}
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.tile input { width: 1.15rem; height: 1.15rem; margin: 0; accent-color: var(--amber); }
+.tile:has(input:checked) { border-color: var(--amber); background: #2c2618; }
+.tile:has(input:focus-visible) { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.area-note {
+  margin: -4px 0 12px;
+  padding: 10px 12px;
+  color: var(--cream);
+  background: #2c2618;
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.area-note[hidden] { display: none; }
+
+.photo-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px;
+  color: var(--cream);
+  background: var(--panel);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+.photo-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.photo-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.photo-item img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; }
+.photo-meta { min-width: 0; font-size: 13px; }
+.photo-meta p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.photo-bar { height: 4px; margin-top: 6px; background: #2a2822; border-radius: 99px; }
+.photo-bar span { display: block; height: 100%; width: 0; background: var(--amber); }
+.photo-remove {
+  min-height: 40px;
+  padding: 6px 10px;
+  color: var(--cream);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.step-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+html.js .step-actions {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 8px;
+  background: linear-gradient(rgba(12, 11, 8, 0), var(--black) 28%);
+}
+.step-actions .button { flex: 1; }
+html:not(.js) .step-next,
+html:not(.js) #back-button { display: none; }
+html.js .no-js-submit { display: none; }
+
+.field-error { margin: 4px 0 0; color: #ffd0c2; font-size: 14px; }
+.field-error[hidden] { display: none; }
+.estimate-page .field input[aria-invalid="true"],
+.estimate-page .tile-grid[aria-invalid="true"] { outline: 2px solid #e85d24; }
+
+.form-error[hidden] { display: none; }
+
+.estimate-success { display: none; }
+.estimate-success.is-on { display: block; }
+.estimate-success h2 {
+  margin: 0 0 8px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(40px, 10vw, 64px);
+  font-weight: 400;
+  letter-spacing: .04em;
+  line-height: .95;
+}
+.reference { margin: 12px 0; font-size: 16px; }
+.reference strong { font-family: ui-monospace, monospace; letter-spacing: .03em; }
+
+.alert-card {
+  margin-top: 18px;
+  padding: 14px;
+  background: #1a1914;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.alert-card[hidden] { display: none; }
+.alert-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: rgba(242, 234, 214, .75); font-size: 12px; }
+.alert-card h3 { margin: 0 0 8px; font-size: 18px; }
+.alert-card p { margin: 0 0 6px; font-size: 15px; }
+.alert-card a { color: var(--amber-light); text-decoration: underline; text-underline-offset: 2px; }
+.alert-photos { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
+.alert-photos img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
+
+.noscript-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.estimate-footer { padding-bottom: 28px; color: rgba(242, 234, 214, .78); font-size: 13px; }
+.estimate-footer a { text-decoration: underline; text-underline-offset: 2px; }
+
+@media (max-width: 520px) {
+  .estimate-page .field-row { grid-template-columns: 1fr; }
+}
+@media (min-width: 720px) {
+  .tile-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .estimate-main { padding-top: 28px; }
+}

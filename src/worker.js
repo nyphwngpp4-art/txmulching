@@ -1,15 +1,23 @@
-// Worker entry: routes /api/* to the Pages-style function handlers, adds
-// byte-range support to /video/*, and serves everything else from the static
-// assets binding.
+// Worker entry: routes /api/* to the handlers, adds byte-range support to
+// /video/*, retries unforwarded leads on a cron, and serves everything else
+// from the static assets binding.
 
 import { onRequest as chat } from '../functions/api/chat.js';
 import { onRequest as quote } from '../functions/api/quote.js';
 import { onRequest as voiceToken } from '../functions/api/voice-token.js';
+import { onRequest as quotePhoto } from '../functions/api/quote-photo.js';
+import { onRequest as publicConfig } from '../functions/api/public-config.js';
+import { onRequest as demoLeads } from '../functions/api/demo-leads.js';
+import { onRequest as leadPhoto } from '../functions/api/lead-photo.js';
+import { retryUnforwarded } from '../functions/api/pipeline.js';
 
 const API_ROUTES = new Map([
   ['/api/chat', chat],
   ['/api/quote', quote],
-  ['/api/voice-token', voiceToken]
+  ['/api/voice-token', voiceToken],
+  ['/api/quote-photo', quotePhoto],
+  ['/api/public-config', publicConfig],
+  ['/api/demo-leads', demoLeads]
 ]);
 
 // Static assets answer every Range request with 200 and the whole file, and
@@ -45,20 +53,33 @@ async function serveVideo(request, env) {
   return response;
 }
 
+function leadPhotoParams(pathname) {
+  const match = /^\/api\/lead-photo\/([^/]+)\/([^/]+)\/?$/.exec(pathname);
+  if (!match) return null;
+  return { requestId: decodeURIComponent(match[1]), file: decodeURIComponent(match[2]) };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
     if (pathname.startsWith('/api/')) {
-      const handler = API_ROUTES.get(pathname.replace(/\/+$/, ''));
+      const normalized = pathname.replace(/\/+$/, '') || '/';
+      const photo = leadPhotoParams(normalized);
+      if (photo) return leadPhoto({ request, env, ctx, params: photo });
+      const handler = API_ROUTES.get(normalized);
       if (!handler) {
         return new Response(JSON.stringify({ error: 'Not found.' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
         });
       }
-      return handler({ request, env, waitUntil: ctx.waitUntil.bind(ctx) });
+      return handler({ request, env, ctx });
     }
     if (pathname.startsWith('/video/')) return serveVideo(request, env);
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(retryUnforwarded(env));
   }
 };

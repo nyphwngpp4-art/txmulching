@@ -1,0 +1,38 @@
+# Copy to .dev.vars for `npx wrangler dev`. Never commit .dev.vars.
+# Empty values are fine: the Worker degrades when a secret is missing.
+
+# Required before real leads can leave this machine. No fallback URL is baked in.
+GOOGLE_SCRIPT_URL=
+
+# Same value as the Apps Script property TOKEN. Omit until the script checks it.
+APPS_SCRIPT_TOKEN=
+
+# Chat and voice. Leave blank locally if you are not testing them.
+XAI_API_KEY=
+XAI_MODEL=
+
+# Comma-separated. Leave blank to allow the request Host (local wrangler included).
+ALLOWED_ORIGINS=
+
+# Demo submissions skip GOOGLE_SCRIPT_URL. DEMO_STUB=1 exposes GET /api/demo-leads
+# on localhost only, for the local end-to-end check.
+DEMO_SCRIPT_URL=
+DEMO_STUB=1
+
+# Optional. Photo upload needs the LEAD_PHOTOS R2 binding (local wrangler provides it).
+# Signed owner links also need PHOTO_LINK_SECRET.
+PHOTO_LINK_SECRET=
+
+# Both must be set or Turnstile stays off and the forms keep working.
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET=
+
+# Backup alert after a lead fails to forward three times. Either pair works.
+# If neither is set, the Worker logs backup_alert_not_configured once.
+RESEND_API_KEY=
+BACKUP_ALERT_EMAIL=
+BACKUP_ALERT_FROM=
+BACKUP_ALERT_URL=
+
+# Milliseconds for the Apps Script fetch. Defaults to 10000.
+FORWARD_TIMEOUT_MS=10000

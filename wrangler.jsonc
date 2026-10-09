@@ -15,6 +15,40 @@
     "run_worker_first": ["/api/*", "/video/*"]
   },
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  // Retries leads that were stored in D1 but not yet accepted by Apps Script.
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  // REPLACE_BEFORE_MERGE: `npx wrangler d1 create txm-leads` and paste the real
+  // database_id. A placeholder keeps local `wrangler dev` working and makes a
+  // production deploy fail until the database exists, so a merge cannot point
+  // the live Worker at a database that was never created.
+  "d1_databases": [
+    {
+      "binding": "LEADS",
+      "database_name": "txm-leads",
+      "database_id": "00000000-0000-4000-8000-000000000001",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // REPLACE_BEFORE_MERGE: `npx wrangler r2 bucket create txm-lead-photos`
+  // The bucket stays private. Do not add a public r2.dev domain.
+  "r2_buckets": [
+    {
+      "binding": "LEAD_PHOTOS",
+      "bucket_name": "txm-lead-photos"
+    }
+  ],
+  // These namespaces are created on deploy. Limits are per Cloudflare location.
+  "ratelimits": [
+    { "name": "QUOTE_RL", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
+    { "name": "PHOTO_RL", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },
+    { "name": "CHAT_RL", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
+    { "name": "VOICE_RL", "namespace_id": "1004", "simple": { "limit": 5, "period": 60 } }
+  ]
 }

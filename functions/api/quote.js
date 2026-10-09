@@ -1,115 +1,207 @@
-// Cloudflare Pages Function: POST /api/quote
-// Validates a quote request and forwards it to the Google Apps Script endpoint.
+// Worker route: POST /api/quote
+// Validates a callback or /estimate submission. Real leads are stored in D1
+// first (when the LEADS binding exists) and then forwarded to Apps Script.
+// Demo leads never go to the TX Mulching script.
 
-const DEFAULT_GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4cvrrOyvDmg9pZnd2Qi3MWoREjIXjvPfjkKx_ED_lXNOZdUo5MFmS0Z7A3gnjtKEi/exec';
-const WINDOW_MS = 15 * 60 * 1000;
-const MAX_REQUESTS = 5;
-const requestLog = new Map();
+import {
+  callUs,
+  clean,
+  contentTooLarge,
+  demoFromRequest,
+  isRateLimited,
+  json,
+  methodNotAllowed,
+  timingError,
+  validOrigin,
+  verifyTurnstile
+} from './_lib.js';
+import { validateQuote } from './quote-validate.js';
+import {
+  forwardStoredLead,
+  hasLeadsDb,
+  insertDemoLead,
+  insertLead,
+  postToScript,
+  rememberDemo
+} from './pipeline.js';
+import { promotePhotos, photoUrls } from './photos.js';
 
-function json(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
-  });
+const JSON_MAX = 20_000;
+const FORM_MAX = 32_000_000;
+
+function isHtmlForm(request) {
+  const type = request.headers.get('content-type') || '';
+  return type.includes('multipart/form-data') || type.includes('application/x-www-form-urlencoded');
 }
 
-function clean(value, maxLength) {
-  return String(value ?? '').replace(/[<>]/g, '').trim().slice(0, maxLength);
+function redirectToEstimate(request, params) {
+  const url = new URL(request.url);
+  const target = new URL('/estimate', url.origin);
+  for (const [key, value] of Object.entries(params)) {
+    if (value) target.searchParams.set(key, value);
+  }
+  return Response.redirect(target.toString(), 303);
 }
 
-function getClientIp(request) {
-  return request.headers.get('cf-connecting-ip')
-    || String(request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim();
-}
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const existing = (requestLog.get(ip) || []).filter((time) => now - time < WINDOW_MS);
-  if (existing.length >= MAX_REQUESTS) return true;
-  existing.push(now);
-  requestLog.set(ip, existing);
-  return false;
-}
-
-function validOrigin(request, env) {
-  const origin = request.headers.get('origin');
-  if (!origin) return true;
-  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
-  if (allowed.length) return allowed.includes(origin);
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-  return origin === `https://${host}` || origin === `http://${host}`;
+async function readSubmission(request) {
+  const html = isHtmlForm(request);
+  if (!html) {
+    const parsed = await request.json().catch(() => null);
+    return { data: parsed && typeof parsed === 'object' ? parsed : {}, files: [], html };
+  }
+  const form = await request.formData();
+  const data = {};
+  const files = [];
+  for (const [key, value] of form.entries()) {
+    if (typeof value === 'string') {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        const current = data[key];
+        data[key] = Array.isArray(current) ? [...current, value] : [current, value];
+      } else {
+        data[key] = value;
+      }
+    } else if (value && typeof value.arrayBuffer === 'function' && value.size) {
+      files.push(value);
+    }
+  }
+  return { data, files, html };
 }
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  const { request, env, ctx } = context;
 
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed.' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', Allow: 'POST' }
-    });
+  if (request.method !== 'POST') return methodNotAllowed('POST');
+  if (!validOrigin(request, env, { allowMissing: true })) {
+    return json(403, { error: 'Request origin is not allowed.' });
   }
 
-  if (!validOrigin(request, env)) return json(403, { error: 'Request origin is not allowed.' });
-
-  const contentLength = Number(request.headers.get('content-length') || 0);
-  if (contentLength > 20_000) return json(413, { error: 'Request is too large.' });
-
-  if (isRateLimited(getClientIp(request))) {
-    return json(429, { error: 'Too many requests. Please wait before trying again.' });
+  const html = isHtmlForm(request);
+  if (contentTooLarge(request, html ? FORM_MAX : JSON_MAX)) {
+    return html
+      ? redirectToEstimate(request, { error: 'That submission is too large.' })
+      : json(413, { error: 'Request is too large.' });
   }
 
-  const parsed = await request.json().catch(() => null);
-  const body = parsed && typeof parsed === 'object' ? parsed : {};
-
-  if (clean(body.website, 100)) return json(200, { ok: true });
-
-  const formStartedAt = Number(body.formStartedAt);
-  const formAge = Date.now() - formStartedAt;
-  if (!Number.isFinite(formStartedAt) || formAge < 2_000 || formAge > 2 * 60 * 60 * 1000) {
-    return json(400, { error: 'Please refresh the page and try again.' });
+  if (await isRateLimited(request, env, 'QUOTE_RL', 5, 60_000)) {
+    const error = 'Too many requests. Please wait before trying again.';
+    return html ? redirectToEstimate(request, { error }) : json(429, { error });
   }
 
-  const payload = {
-    name: clean(body.name, 80),
-    phone: clean(body.phone, 30),
-    email: clean(body.email, 120).toLowerCase(),
-    zipcode: clean(body.zipcode, 10),
-    acreage: clean(body.acreage, 40),
-    serviceType: clean(body.serviceType, 80),
-    description: clean(body.description, 1500),
-    source: 'TX Mulching website',
-    submittedAt: new Date().toISOString(),
-    requestId: crypto.randomUUID()
-  };
+  const submission = await readSubmission(request);
+  const body = submission.data;
+  if (clean(body.website, 100)) {
+    return html
+      ? redirectToEstimate(request, { sent: '1' })
+      : json(200, { ok: true });
+  }
 
-  if (!payload.name) return json(400, { error: 'Name is required.' });
-  if (!payload.phone && !payload.email) return json(400, { error: 'A phone number or email address is required.' });
-  if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return json(400, { error: 'Enter a valid email address.' });
-  if (payload.phone && payload.phone.replace(/\D/g, '').length < 10) return json(400, { error: 'Enter a valid phone number.' });
-  if (payload.zipcode && !/^\d{5}(?:-\d{4})?$/.test(payload.zipcode)) return json(400, { error: 'Enter a valid ZIP code.' });
+  const turnstile = await verifyTurnstile(request, env, body['cf-turnstile-response'] || body.turnstileToken);
+  if (!turnstile.ok) {
+    return html
+      ? redirectToEstimate(request, { error: turnstile.error })
+      : json(403, { error: turnstile.error });
+  }
 
-  const scriptUrl = env.GOOGLE_SCRIPT_URL || DEFAULT_GOOGLE_SCRIPT_URL;
+  const timing = timingError(body, { waive: html });
+  if (timing) return json(400, { error: timing });
+
+  const demo = demoFromRequest(body, request);
+  const validated = validateQuote(body, { demo });
+  if (validated.error) {
+    return html
+      ? redirectToEstimate(request, { error: validated.error })
+      : json(400, { error: validated.error });
+  }
+
+  const payload = validated.payload;
+  if (!payload.ref) {
+    try {
+      const ref = new URL(request.headers.get('referer') || '').searchParams.get('ref');
+      if (ref) payload.ref = clean(ref, 40);
+    } catch { /* no referer */ }
+  }
 
   try {
-    const upstream = await fetch(scriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      redirect: 'follow'
-    });
-    // Apps Script answers HTTP 200 even for script crashes and sign-in pages
-    // (HTML bodies), so success requires the script's own {ok:true} reply.
-    const upstreamText = await upstream.text().catch(() => '');
-    let upstreamJson = null;
-    try { upstreamJson = JSON.parse(upstreamText); } catch { /* not JSON */ }
-    if (!upstream.ok || !upstreamJson || upstreamJson.ok !== true) {
-      console.error('Quote not stored', payload.requestId, upstream.status, upstreamText.slice(0, 200));
-      return json(502, { error: 'The quote service is temporarily unavailable.' });
-    }
-    return json(200, { ok: true, requestId: payload.requestId });
+    const promoted = await promotePhotos(env, payload.requestId, payload.photoKeys, submission.files);
+    payload.photoKeys = promoted.keys;
+    payload.photoLinks = await photoUrls(request, env, payload.requestId, promoted.files);
   } catch (error) {
-    console.error('Quote submission failed', error);
-    return json(502, { error: 'The quote service is temporarily unavailable.' });
+    console.error(JSON.stringify({
+      event: 'photo_promote_failed',
+      requestId: payload.requestId,
+      error: error?.message || String(error)
+    }));
+    payload.photoLinks = [];
   }
+
+  if (demo) return finishDemo(request, env, ctx, payload, html);
+  return finishReal(request, env, ctx, payload, html);
+}
+
+async function finishDemo(request, env, ctx, payload, html) {
+  let stored = false;
+  if (hasLeadsDb(env)) {
+    try {
+      await insertDemoLead(env, payload);
+      stored = true;
+    } catch (error) {
+      console.error(JSON.stringify({ event: 'demo_d1_failed', requestId: payload.requestId, error: error?.message || String(error) }));
+    }
+  }
+  if (env.DEMO_STUB === '1' || (!stored && !env.DEMO_SCRIPT_URL)) rememberDemo(payload);
+  if (env.DEMO_SCRIPT_URL) {
+    const job = postToScript(env.DEMO_SCRIPT_URL, payload, env).then((result) => {
+      if (!result.ok) {
+        console.error(JSON.stringify({ event: 'demo_forward_failed', requestId: payload.requestId, error: result.error }));
+      }
+    });
+    if (ctx?.waitUntil) ctx.waitUntil(job);
+    else await job;
+  } else if (!stored) {
+    console.error(JSON.stringify({
+      event: 'demo_sink_not_configured',
+      requestId: payload.requestId,
+      note: 'Lead kept in the local stub only. Set DEMO_SCRIPT_URL or the LEADS D1 binding.'
+    }));
+  }
+
+  const body = { ok: true, requestId: payload.requestId, demo: true };
+  return html
+    ? redirectToEstimate(request, { sent: '1', id: payload.requestId, demo: '1' })
+    : json(200, body);
+}
+
+async function finishReal(request, env, ctx, payload, html) {
+  if (hasLeadsDb(env)) {
+    try {
+      await insertLead(env, payload);
+      const job = forwardStoredLead(env, payload);
+      if (ctx?.waitUntil) ctx.waitUntil(job);
+      else await job;
+      return html
+        ? redirectToEstimate(request, { sent: '1', id: payload.requestId })
+        : json(200, { ok: true, requestId: payload.requestId });
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: 'quote_store_failed',
+        requestId: payload.requestId,
+        error: error?.message || String(error)
+      }));
+    }
+  }
+
+  if (!env.GOOGLE_SCRIPT_URL) {
+    console.error(JSON.stringify({ event: 'GOOGLE_SCRIPT_URL not configured', requestId: payload.requestId }));
+    const error = callUs('The quote service is temporarily unavailable.');
+    return html ? redirectToEstimate(request, { error }) : json(503, { error });
+  }
+
+  const result = await forwardStoredLead(env, payload);
+  if (!result.ok) {
+    const error = callUs('The quote service is temporarily unavailable.');
+    return html ? redirectToEstimate(request, { error }) : json(502, { error });
+  }
+  return html
+    ? redirectToEstimate(request, { sent: '1', id: payload.requestId })
+    : json(200, { ok: true, requestId: payload.requestId });
 }

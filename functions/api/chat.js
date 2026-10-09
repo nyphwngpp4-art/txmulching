@@ -1,45 +1,11 @@
-// Cloudflare Pages Function: POST /api/chat
+// Worker route: POST /api/chat
 // Server-side proxy to the xAI Responses API. Keeps the API key server-side.
 
 import businessData from '../../business-data.json';
+import { contentTooLarge, isRateLimited, json, methodNotAllowed, validOrigin } from './_lib.js';
 
-const WINDOW_MS = 5 * 60 * 1000;
-const MAX_REQUESTS = 20;
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_LENGTH = 1_000;
-const requestLog = new Map();
-
-function json(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
-  });
-}
-
-function getClientIp(request) {
-  return request.headers.get('cf-connecting-ip')
-    || String(request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim();
-}
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const existing = (requestLog.get(ip) || []).filter((time) => now - time < WINDOW_MS);
-  if (existing.length >= MAX_REQUESTS) return true;
-  existing.push(now);
-  requestLog.set(ip, existing);
-  return false;
-}
-
-function validOrigin(request, env) {
-  const origin = request.headers.get('origin');
-  // Browsers always send Origin on these POSTs; a request without one is a
-  // script spending xAI credit, not a visitor.
-  if (!origin) return false;
-  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean);
-  if (allowed.length) return allowed.includes(origin);
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-  return origin === `https://${host}` || origin === `http://${host}`;
-}
 
 function sanitizeMessages(messages) {
   if (!Array.isArray(messages)) return [];
@@ -88,19 +54,13 @@ Behavior:
 export async function onRequest(context) {
   const { request, env } = context;
 
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed.' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', Allow: 'POST' }
-    });
-  }
+  if (request.method !== 'POST') return methodNotAllowed('POST');
 
   if (!validOrigin(request, env)) return json(403, { error: 'Request origin is not allowed.' });
 
-  const contentLength = Number(request.headers.get('content-length') || 0);
-  if (contentLength > 25_000) return json(413, { error: 'Request is too large.' });
+  if (contentTooLarge(request, 25_000)) return json(413, { error: 'Request is too large.' });
 
-  if (isRateLimited(getClientIp(request))) {
+  if (await isRateLimited(request, env, 'CHAT_RL', 20, 60_000)) {
     return json(429, { error: 'Too many chat requests. Please wait a few minutes.' });
   }
 

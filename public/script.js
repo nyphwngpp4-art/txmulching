@@ -34,7 +34,10 @@
   // reduced-motion and data-saver visitors.
   const video = document.querySelector('.hero-media video');
   const videoToggle = document.getElementById('hero-video-toggle');
-  const skipVideo = window.matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData === true;
+  const connection = navigator.connection;
+  const slowConnection = connection?.saveData === true || (connection?.effectiveType && connection.effectiveType !== '4g');
+  const openedOnAHash = Boolean(location.hash);
+  const skipVideo = window.matchMedia('(prefers-reduced-motion: reduce)').matches || slowConnection || openedOnAHash;
   if (video && !skipVideo) {
     const startVideo = () => {
       video.src = window.matchMedia('(orientation: landscape)').matches ? video.dataset.landscape : video.dataset.portrait;
@@ -45,8 +48,21 @@
       }, { once: true });
       video.play().catch(() => { /* autoplay blocked (e.g. iOS Low Power Mode): the still image stays */ });
     };
-    if (document.readyState === 'complete') startVideo();
-    else window.addEventListener('load', startVideo, { once: true });
+    const hero = document.querySelector('.hero');
+    const arm = () => {
+      if (!hero || !('IntersectionObserver' in window)) {
+        startVideo();
+        return;
+      }
+      const observer = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        startVideo();
+      }, { threshold: 0.25 });
+      observer.observe(hero);
+    };
+    if (document.readyState === 'complete') arm();
+    else window.addEventListener('load', arm, { once: true });
   }
   videoToggle?.addEventListener('click', () => {
     const pausing = !video.paused;
@@ -59,41 +75,62 @@
   if (year) year.textContent = String(new Date().getFullYear());
 
   const form = document.getElementById('quote-form');
-  const startedAt = document.getElementById('form-started-at');
+  const elapsed = document.getElementById('elapsed-ms');
   const submitButton = document.getElementById('submit-button');
   const errorBox = document.getElementById('form-error');
   const successBox = document.getElementById('form-success');
-  if (startedAt) startedAt.value = String(Date.now());
+  const formStarted = performance.now();
+
+  const setFieldError = (id, message) => {
+    const input = document.getElementById(id);
+    const slot = document.getElementById(`${id}-error`);
+    if (input) {
+      if (message) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+    }
+    if (slot) {
+      slot.textContent = message || '';
+      slot.hidden = !message;
+    }
+  };
 
   const showError = (message) => {
     if (!errorBox) return;
     errorBox.textContent = message;
-    errorBox.hidden = false;
-    errorBox.focus?.();
+    errorBox.hidden = !message;
+    if (message) errorBox.focus?.();
   };
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    errorBox.hidden = true;
+    showError('');
     const data = Object.fromEntries(new FormData(form).entries());
     const name = String(data.name || '').trim();
     const phone = String(data.phone || '').trim();
     const email = String(data.email || '').trim();
+    const zipcode = String(data.zipcode || '').trim();
+    const phoneDigits = phone.replace(/\D/g, '');
+    const emailOk = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const phoneOk = !phone || phoneDigits.length >= 10;
+    const zipOk = !zipcode || /^\d{5}(?:-\d{4})?$/.test(zipcode);
 
-    if (!name) {
-      showError('Please enter your name.');
-      document.getElementById('name')?.focus();
+    setFieldError('name', name ? '' : 'Enter your name.');
+    setFieldError('phone', phoneOk ? '' : 'Enter a valid phone number.');
+    setFieldError('email', emailOk ? '' : 'Enter a valid email address.');
+    setFieldError('zipcode', zipOk ? '' : 'Enter a valid ZIP code.');
+    if (!phone && !email) setFieldError('phone', 'Enter a phone number or an email address.');
+
+    if (!name || !phoneOk || !emailOk || !zipOk || (!phone && !email)) {
+      const firstInvalid = form.querySelector('[aria-invalid="true"]');
+      firstInvalid?.focus();
       return;
     }
-    if (!phone && !email) {
-      showError('Please provide at least a phone number or an email address.');
-      document.getElementById('phone')?.focus();
-      return;
-    }
 
+    if (elapsed) data.elapsedMs = String(Math.round(performance.now() - formStarted));
     submitButton.disabled = true;
     submitButton.textContent = 'Sending…';
     try {
+      if (window.txTurnstile) data['cf-turnstile-response'] = await window.txTurnstile.token();
       const response = await fetch('/api/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -102,13 +139,15 @@
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'We could not submit the request.');
       if (window.txTrack) window.txTrack('quote_submit', { service_type: data.serviceType || 'unspecified' });
+      const requestId = document.getElementById('request-id');
+      if (requestId) requestId.textContent = result.requestId || '';
       form.hidden = true;
       successBox.hidden = false;
       successBox.focus?.();
     } catch (error) {
       showError(`${error.message || 'Something went wrong.'} Please try again or call (903) 833-3965.`);
       submitButton.disabled = false;
-      submitButton.textContent = 'Request My Callback';
+      submitButton.textContent = 'Request my callback';
     }
   });
 

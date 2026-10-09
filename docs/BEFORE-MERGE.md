@@ -4,49 +4,57 @@
 or the production deploy will fail or real leads will 503. Nothing in this
 branch was deployed, and no test lead was sent to the owners.
 
+## Already done
+
+- D1 database `txm-leads` exists. `database_id` in `wrangler.jsonc` is
+  `757fb9fe-c7f6-4d08-99b4-00f948de0733`. Migration `0001` is already applied
+  remotely. Do not create another database.
+- These are Worker **secrets**, not plain vars: `GOOGLE_SCRIPT_URL`,
+  `APPS_SCRIPT_TOKEN`, `PHOTO_LINK_SECRET`. Leave them as secrets.
+- On 28 Sep 2026 `GOOGLE_SCRIPT_URL` was a dashboard plain var. A deploy wiped
+  it because `wrangler.jsonc` did not declare it. Wrangler keeps `secret_text`
+  across deploys and deletes undeclared plain vars. Do not add a `vars` block
+  for `GOOGLE_SCRIPT_URL` or any other secret. CI only runs
+  `wrangler deploy --dry-run` and must not pass `--var` or a secrets file.
+- `PHOTO_LINK_SECRET` is set for the optional R2 photo links. The live photo
+  path does not use it. Photos go to Google Drive through Apps Script.
+- R2 is not enabled on the account. `wrangler.jsonc` has no `r2_buckets`
+  binding, so deploy does not require a bucket. Quotes still send with no R2.
+
 ## Cloudflare
 
 1. Workers → `txmulching` → Settings → Variables and Secrets. Confirm
-   `GOOGLE_SCRIPT_URL` is the live `/exec` URL. The archived URL that used to
-   be hard-coded in `quote.js` is gone. Search Workers Logs for
-   `GOOGLE_SCRIPT_URL not configured`, `quote_forward_failed`, and
-   `quote_store_failed` since 28 Sep 2026.
-2. `npx wrangler d1 create txm-leads`. Replace `database_id` in
-   `wrangler.jsonc` (the current value is a placeholder). Then
-   `npx wrangler d1 migrations apply txm-leads --remote`.
-3. `npx wrangler r2 bucket create txm-lead-photos`. Leave the bucket private.
-   Add a lifecycle rule: delete `drafts/` after 2 days. Do not delete
-   `leads/` until the owners pick a retention period (decision 7 in
-   `REVIEW-OPUS.md`).
-4. `openssl rand -hex 32` twice. Store one as Worker secret
-   `APPS_SCRIPT_TOKEN` and the other as `PHOTO_LINK_SECRET`.
-5. Turnstile: create a widget for `txmulching.com` (managed or invisible).
-   Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET` together. Until both are
-   set, the forms skip the check on purpose so the homepage callback form
-   keeps working.
-6. Rate-limit bindings (`QUOTE_RL`, `PHOTO_RL`, `CHAT_RL`, `VOICE_RL`) are
+   `GOOGLE_SCRIPT_URL` is still the live `/exec` URL and still type Secret.
+   Search Workers Logs for `GOOGLE_SCRIPT_URL not configured`,
+   `quote_forward_failed`, and `quote_store_failed` since 28 Sep 2026.
+2. Turnstile is still pending. Create a widget for `txmulching.com` (managed
+   or invisible). Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET` together.
+   Until both are set, the forms skip the check on purpose so the homepage
+   callback form keeps working.
+3. Rate-limit bindings (`QUOTE_RL`, `PHOTO_RL`, `CHAT_RL`, `VOICE_RL`) are
    declared in `wrangler.jsonc` and are created on deploy. They count per
    Cloudflare location, keyed by IP.
-7. Optional backup channel, only after three failed forwards: set
+4. Optional backup channel, only after three failed forwards: set
    `RESEND_API_KEY` and `BACKUP_ALERT_EMAIL` (and `BACKUP_ALERT_FROM` if the
    default sender is wrong), or set `BACKUP_ALERT_URL`. Do not enable
    Cloudflare Email Routing `send_email` unless the owners accept replacing
    the iCloud MX records (`LEAD-NOTIFICATIONS.md` Part 2).
-8. Optional: `DEMO_SCRIPT_URL` for a second Apps Script deployment that
+5. Optional: `DEMO_SCRIPT_URL` for a second Apps Script deployment that
    records demo tries. Without it, demo rows still land in D1 `demo_leads`
    and are not emailed to the owners.
-9. xAI console: set a monthly spend cap. Voice tokens can still be minted by
+6. xAI console: set a monthly spend cap. Voice tokens can still be minted by
    a client that forges `Origin` and `Sec-Fetch-Site` until Turnstile is on.
-10. Confirm every subdomain is HTTPS-only before anyone submits
-    `txmulching.com` to the HSTS preload list. The header already sends
-    `includeSubDomains; preload`. This branch does not submit the domain.
+7. Confirm every subdomain is HTTPS-only before anyone submits
+   `txmulching.com` to the HSTS preload list. The header already sends
+   `includeSubDomains; preload`. This branch does not submit the domain.
 
 ## Google (agavi.aiconsulting@gmail.com)
 
 1. Add Sheet headers J through S if they are empty: Address, City, County,
    Density, Timeline, Callback window, Budget, Photo links, Ref, Source.
 2. Paste `apps-script/Code.gs`, set script property `TOKEN` to the same value
-   as `APPS_SCRIPT_TOKEN`, and deploy a new version. Steps:
+   as `APPS_SCRIPT_TOKEN`, run `authorizePhotos` once, and deploy a new
+   version. That creates the Drive folder `TX Mulching Lead Photos`. Steps:
    `apps-script/README.md`.
 3. Run `testNotification` once, then submit one lead named `TEST — delete me`
    and delete that row. Do this only after the Worker secret is set.
@@ -67,9 +75,10 @@ branch was deployed, and no test lead was sent to the owners.
    visits may still be stuck on the cached 301. New links need a query string
    that was never 301'd, for example
    `https://txmulching.com/estimate?ref=p07&demo=1`.
-5. Photo retention text in `public/privacy.html` says photos are kept until
-   the customer asks for deletion or the owners set a shorter period. Publish
-   the real period once they choose it, and match the R2 lifecycle rule.
+5. Photo retention text in `public/privacy.html` says photos are kept in
+   Google Drive until the customer asks for deletion or the owners set a
+   shorter period. Each file is shared so anyone with the link can view it.
+   Publish the real period once they choose it.
 
 ## After merge
 

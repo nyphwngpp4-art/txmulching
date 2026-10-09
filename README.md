@@ -58,10 +58,10 @@ Recommended:
 - `ALLOWED_ORIGINS`: comma-separated production origins, such as `https://txmulching.com,https://www.txmulching.com`
 - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET`: both required before Turnstile is enforced. If either is missing, forms keep working and the check is skipped.
 - `DEMO_SCRIPT_URL`: optional second Apps Script for `?demo=1` leads. Demo posts never use `GOOGLE_SCRIPT_URL`.
-- `PHOTO_LINK_SECRET`: HMAC key for owner photo links. Without it, leads still save and the alert simply has no photo URLs.
+- `PHOTO_LINK_SECRET`: HMAC key for the optional R2 photo links. The live path stores photos in Google Drive through Apps Script and does not need this secret. It is already set; leave it as a secret.
 - `RESEND_API_KEY` plus `BACKUP_ALERT_EMAIL`, or `BACKUP_ALERT_URL`: backup notice after a stored lead fails to forward three times.
 
-Bindings in `wrangler.jsonc` (`LEADS`, `LEAD_PHOTOS`, rate limits) have to exist in the Cloudflare account before a production deploy. See `docs/BEFORE-MERGE.md`. `.dev.vars.example` lists every local secret.
+Bindings in `wrangler.jsonc` (`LEADS` and the rate limits) have to exist in the Cloudflare account before a production deploy. There is no R2 binding. Estimate photos are compressed in the browser and posted with the lead; Apps Script saves them in Google Drive. See `docs/BEFORE-MERGE.md`. `.dev.vars.example` lists every local secret. Do not put `GOOGLE_SCRIPT_URL` or any other secret in a `vars` block. A plain var that is not listed in `wrangler.jsonc` is deleted on the next deploy.
 
 The chat interface is included in the site but will return a clear “not activated” message until `XAI_API_KEY` is configured.
 

@@ -107,12 +107,13 @@ into a Worker secret, old deployment archived.
 
 ## Open items
 
-- Confirm `GOOGLE_SCRIPT_URL` is set on the Worker. The fallback URL has been
-  removed from `quote.js`. If the secret is missing and D1 is also missing,
-  submissions return 503.
-- Redeploy `apps-script/Code.gs` and set `APPS_SCRIPT_TOKEN` (see that README).
-- Create the D1 database and private R2 bucket, and replace the placeholder
-  ids in `wrangler.jsonc`, before merging. Full list: `docs/BEFORE-MERGE.md`.
+- `GOOGLE_SCRIPT_URL`, `APPS_SCRIPT_TOKEN`, and `PHOTO_LINK_SECRET` are Worker
+  secrets. Keep them secrets. A plain var is wiped on deploy if
+  `wrangler.jsonc` does not list it (that happened to `GOOGLE_SCRIPT_URL` on
+  28 Sep 2026).
+- D1 database `txm-leads` exists and migration `0001` is applied. Photos go
+  to Google Drive through `apps-script/Code.gs`, not R2. Redeploy that script
+  and run `authorizePhotos` once. Full list: `docs/BEFORE-MERGE.md`.
 - Decide on the iCloud+ → Cloudflare Email Routing move (Part 2). Not
   required for alerts to work — the script emails Kim and Hal directly.
   Do not turn on Email Routing `send_email` as the backup channel unless

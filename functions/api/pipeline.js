@@ -41,7 +41,22 @@ export async function ensureSchema(env) {
 function storedPayload(payload) {
   const copy = { ...payload };
   delete copy.token;
+  // Photo bytes go to Drive on the first forward. D1 rows stay under 1 MB.
+  delete copy.photos;
   return copy;
+}
+
+function scriptBody(payload, env) {
+  const body = sheetSafePayload(storedPayload(payload));
+  if (env.APPS_SCRIPT_TOKEN) body.token = env.APPS_SCRIPT_TOKEN;
+  if (Array.isArray(payload.photos) && payload.photos.length) {
+    body.photos = payload.photos.map((photo) => ({
+      name: photo.name,
+      contentType: photo.contentType,
+      data: photo.data
+    }));
+  }
+  return body;
 }
 
 export async function insertLead(env, payload) {
@@ -61,12 +76,12 @@ export async function insertDemoLead(env, payload) {
 }
 
 export async function postToScript(url, payload, env) {
-  const timeoutMs = Number(env.FORWARD_TIMEOUT_MS || 10_000);
+  const hasPhotos = Array.isArray(payload.photos) && payload.photos.length > 0;
+  const timeoutMs = Math.max(Number(env.FORWARD_TIMEOUT_MS || 10_000), hasPhotos ? 25_000 : 0);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const body = sheetSafePayload(storedPayload(payload));
-    if (env.APPS_SCRIPT_TOKEN) body.token = env.APPS_SCRIPT_TOKEN;
+    const body = scriptBody(payload, env);
     const upstream = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

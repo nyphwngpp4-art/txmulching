@@ -1,11 +1,73 @@
-// Photo bytes live in a private R2 bucket when LEAD_PHOTOS is bound.
-// Without the binding, uploads fail soft and the rest of the quote still sends.
+// Default photo path is Google Drive via Apps Script (inline bytes on the lead).
+// R2 is optional: storePhoto and promotePhotos run only when LEAD_PHOTOS is bound.
+// A missing binding must not fail the quote.
 
 import { photoLinkIsValid, signPhotoLink, sniffImage } from './_lib.js';
 
 const MAX_BYTES = 5_000_000;
+// Client compresses toward 300 KB. This cap leaves a little headroom.
+export const DRIVE_PHOTO_MAX = 320 * 1024;
 const LINK_TTL_MS = 60 * 24 * 60 * 60 * 1000;
 const LINK_MAX_MS = 90 * 24 * 60 * 60 * 1000;
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function photoFromBytes(bytes) {
+  if (bytes.byteLength > DRIVE_PHOTO_MAX) {
+    return { error: 'Each photo must be about 300 KB or smaller.' };
+  }
+  const sniffed = sniffImage(bytes);
+  if (!sniffed) return { error: 'Upload a JPEG, PNG, or WebP photo.' };
+  return {
+    photo: {
+      name: '',
+      contentType: sniffed.type,
+      data: bytesToBase64(bytes)
+    }
+  };
+}
+
+export function normalizeInlinePhotos(value) {
+  if (value == null || value === '') return { photos: [] };
+  if (!Array.isArray(value)) return { error: 'Photo list was not understood.' };
+  if (value.length > 6) return { error: 'Send 6 photos or fewer.' };
+  const photos = [];
+  for (const item of value) {
+    const raw = String(item?.data || '').replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '');
+    if (!raw) continue;
+    let bytes;
+    try {
+      const binary = atob(raw);
+      bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    } catch {
+      return { error: 'A photo could not be read. Remove it and try again.' };
+    }
+    const built = photoFromBytes(bytes);
+    if (built.error) return { error: built.error };
+    built.photo.name = `${photos.length + 1}.${built.photo.contentType === 'image/png' ? 'png' : built.photo.contentType === 'image/webp' ? 'webp' : 'jpg'}`;
+    photos.push(built.photo);
+  }
+  return { photos };
+}
+
+export async function filesToDrivePhotos(files) {
+  const photos = [];
+  for (const file of files || []) {
+    if (photos.length >= 6) return { error: 'Send 6 photos or fewer.' };
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const built = photoFromBytes(bytes);
+    if (built.error) return { error: built.error };
+    const sniffed = built.photo.contentType === 'image/png' ? 'png' : built.photo.contentType === 'image/webp' ? 'webp' : 'jpg';
+    built.photo.name = `${photos.length + 1}.${sniffed}`;
+    photos.push(built.photo);
+  }
+  return { photos };
+}
 
 export async function storePhoto(env, bytes, hintedIndex) {
   if (!env.LEAD_PHOTOS) {

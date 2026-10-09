@@ -24,9 +24,10 @@ import {
   postToScript,
   rememberDemo
 } from './pipeline.js';
-import { promotePhotos, photoUrls } from './photos.js';
+import { filesToDrivePhotos, promotePhotos, photoUrls } from './photos.js';
 
-const JSON_MAX = 20_000;
+// Six photos at about 300 KB, base64, plus the form fields.
+const JSON_MAX = 4_500_000;
 const FORM_MAX = 32_000_000;
 
 function isHtmlForm(request) {
@@ -121,10 +122,21 @@ export async function onRequest(context) {
     } catch { /* no referer */ }
   }
 
+  if (!env.LEAD_PHOTOS && submission.files.length) {
+    const fromFiles = await filesToDrivePhotos(submission.files);
+    if (fromFiles.error) {
+      return html
+        ? redirectToEstimate(request, { error: fromFiles.error })
+        : json(400, { error: fromFiles.error });
+    }
+    payload.photos = [...(payload.photos || []), ...fromFiles.photos].slice(0, 6);
+  }
+
   try {
-    const promoted = await promotePhotos(env, payload.requestId, payload.photoKeys, submission.files);
+    const promoted = await promotePhotos(env, payload.requestId, payload.photoKeys, env.LEAD_PHOTOS ? submission.files : []);
     payload.photoKeys = promoted.keys;
-    payload.photoLinks = await photoUrls(request, env, payload.requestId, promoted.files);
+    const signed = await photoUrls(request, env, payload.requestId, promoted.files);
+    if (signed.length) payload.photoLinks = signed;
   } catch (error) {
     console.error(JSON.stringify({
       event: 'photo_promote_failed',

@@ -19,8 +19,8 @@ ALLOWED_ORIGINS=
 DEMO_SCRIPT_URL=
 DEMO_STUB=1
 
-# Optional. Photo upload needs the LEAD_PHOTOS R2 binding (local wrangler provides it).
-# Signed owner links also need PHOTO_LINK_SECRET.
+# Optional. Only used if an R2 LEAD_PHOTOS binding is added later.
+# The live photo path is Google Drive through Apps Script, not R2.
 PHOTO_LINK_SECRET=
 
 # Both must be set or Turnstile stays off and the forms keep working.

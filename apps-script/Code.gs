@@ -5,6 +5,8 @@
 var SHEET_ID = '1LoWcYng7Je_KaVSGKdFVTAKmNGSQ06sGuFVk_8pHqoI';
 var LEADS_SHEET = 'Sheet1';
 var DEMO_SHEET = 'Demo Leads';
+var PHOTO_FOLDER_NAME = 'TX Mulching Lead Photos';
+var PHOTO_MAX_BYTES = 320 * 1024;
 
 // Everyone who gets a real lead. Demo posts never email this list.
 var NOTIFY_EMAILS = [
@@ -28,6 +30,16 @@ function doPost(e) {
   }
 
   var demo = data.demo === true || data.demo === 'true' || data.demo === '1';
+  // Save Drive files before the row and the email, then drop the bytes so
+  // they are not written into the Sheet.
+  try {
+    data.photoLinks = saveLeadPhotos_(data);
+  } catch (err) {
+    console.error('photo save failed', err);
+    data.photoLinks = photoLinks_(data);
+  }
+  delete data.photos;
+
   var sheet = openSheet_(demo ? DEMO_SHEET : LEADS_SHEET);
   sheet.appendRow([
     new Date(),
@@ -79,8 +91,82 @@ function cell_(value) {
 
 function photoLinks_(data) {
   var links = data.photoLinks || data.photoUrls || [];
-  if (Array.isArray(links)) return links.join('\n');
+  if (Array.isArray(links)) return links.filter(Boolean).join('\n');
   return String(links || '');
+}
+
+function saveLeadPhotos_(data) {
+  var photos = data.photos;
+  var links = [];
+  var already = photoLinks_(data);
+  if (already) links.push(already);
+  if (!photos || !photos.length) return links.join('\n');
+  var folder = photoFolder_();
+  var count = Math.min(photos.length, 6);
+  for (var i = 0; i < count; i++) {
+    var photo = photos[i] || {};
+    var raw = String(photo.data || '').replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '');
+    if (!raw) continue;
+    var bytes;
+    try {
+      bytes = Utilities.base64Decode(raw);
+    } catch (err) {
+      console.error('photo decode failed', err);
+      continue;
+    }
+    if (!bytes || bytes.length === 0 || bytes.length > PHOTO_MAX_BYTES) continue;
+    if (!looksLikeImage_(bytes)) continue;
+    var mime = imageMime_(bytes);
+    var blob = Utilities.newBlob(bytes, mime, fileName_(data, links.length, mime));
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    links.push(file.getUrl());
+  }
+  return links.join('\n');
+}
+
+function imageMime_(bytes) {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50) return 'image/png';
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57) return 'image/webp';
+  return 'image/jpeg';
+}
+
+function looksLikeImage_(bytes) {
+  if (!bytes || bytes.length < 12) return false;
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return true;
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return true;
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+      && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return true;
+  return false;
+}
+
+function fileName_(data, index, mime) {
+  var ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+  var id = String(data.requestId || 'lead').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 36);
+  return id + '-' + (index + 1) + '.' + ext;
+}
+
+function photoFolder_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('PHOTO_FOLDER_ID');
+  if (id) {
+    try {
+      return DriveApp.getFolderById(id);
+    } catch (err) {
+      console.error('PHOTO_FOLDER_ID invalid', err);
+    }
+  }
+  var found = DriveApp.getFoldersByName(PHOTO_FOLDER_NAME);
+  var folder = found.hasNext() ? found.next() : DriveApp.createFolder(PHOTO_FOLDER_NAME);
+  props.setProperty('PHOTO_FOLDER_ID', folder.getId());
+  return folder;
+}
+
+// Run once from the editor so Apps Script can ask for Drive permission and
+// print the folder id. The live web app uses the same folder.
+function authorizePhotos() {
+  var folder = photoFolder_();
+  Logger.log(folder.getName() + ' ' + folder.getId());
 }
 
 function openSheet_(name) {

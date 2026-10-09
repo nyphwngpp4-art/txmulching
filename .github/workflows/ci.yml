@@ -16,4 +16,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Dry-run only. Do not deploy from CI. Do not pass --var or a secrets
+      # file: a plain var with the same name as a Worker secret would replace it.
       - run: npx wrangler deploy --dry-run --outdir dist

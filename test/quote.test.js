@@ -201,7 +201,61 @@ describe('POST /api/quote', () => {
   });
 });
 
+function tinyJpegBase64() {
+  const jpeg = new Uint8Array(16);
+  jpeg[0] = 0xff;
+  jpeg[1] = 0xd8;
+  jpeg[2] = 0xff;
+  let binary = '';
+  jpeg.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
 describe('photos and voice', () => {
+  it('forwards inline photos to Apps Script and leaves the bytes out of D1', async () => {
+    const data = tinyJpegBase64();
+    let forwarded = null;
+    const original = globalThis.fetch;
+    globalThis.fetch = async (_input, init) => {
+      forwarded = JSON.parse(init.body);
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    };
+    try {
+      const wait = ctx();
+      const response = await quote({
+        request: quoteRequest({ ...estimateBody, photos: [{ data }] }, { ip: '203.0.113.70' }),
+        env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+        ctx: wait
+      });
+      expect(response.status).toBe(200);
+      await wait.drain();
+      expect(forwarded.photos[0].contentType).toBe('image/jpeg');
+      expect(forwarded.photos[0].data).toBe(data);
+      const body = await response.json();
+      const row = await env.LEADS.prepare(
+        'SELECT payload_json FROM leads WHERE request_id = ?'
+      ).bind(body.requestId).first();
+      expect(JSON.parse(row.payload_json).photos).toBeUndefined();
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it('rejects a photo that is not an image', async () => {
+    const exe = new Uint8Array(16);
+    exe[0] = 0x4d;
+    exe[1] = 0x5a;
+    let binary = '';
+    exe.forEach((byte) => { binary += String.fromCharCode(byte); });
+    const response = await quote({
+      request: quoteRequest({ ...estimateBody, demo: '1', photos: [{ data: btoa(binary) }] }, { ip: '203.0.113.71' }),
+      env,
+      ctx: ctx()
+    });
+    expect(response.status).toBe(400);
+    await response.json();
+  });
+
   it('rejects a fake jpeg and serves a signed photo', async () => {
     const rejected = await quotePhoto({
       request: new Request('https://txmulching.test/api/quote-photo', {

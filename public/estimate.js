@@ -218,7 +218,11 @@
       const name = document.createElement('p');
       name.textContent = photo.name;
       const state = document.createElement('p');
-      state.textContent = photo.status === 'done' ? 'Ready' : photo.status === 'error' ? (photo.error || 'Could not upload') : `Uploading ${photo.progress}%`;
+      state.textContent = photo.status === 'done' || photo.status === 'ready' || photo.status === 'local'
+        ? 'Ready'
+        : photo.status === 'error'
+          ? (photo.error || 'Could not add')
+          : `Uploading ${photo.progress}%`;
       const bar = document.createElement('div');
       bar.className = 'photo-bar';
       const fill = document.createElement('span');
@@ -246,21 +250,51 @@
     document.getElementById('photo-keys').value = JSON.stringify(photos.filter((photo) => photo.key).map((photo) => photo.key));
   }
 
+  const photoBackend = fetch('/api/public-config', { headers: { Accept: 'application/json' } })
+    .then((response) => response.json())
+    .then((config) => (config && config.photos === 'r2' ? 'r2' : 'drive'))
+    .catch(() => 'drive');
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || '');
+        const comma = text.indexOf(',');
+        resolve(comma >= 0 ? text.slice(comma + 1) : text);
+      };
+      reader.onerror = () => reject(new Error('That photo could not be read.'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
   async function compress(file) {
+    const maxBytes = 300 * 1024;
     try {
       const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      let width = bitmap.width;
+      let height = bitmap.height;
+      const first = Math.min(1, 1600 / Math.max(width, height));
+      width = Math.max(1, Math.round(width * first));
+      height = Math.max(1, Math.round(height * first));
+      let blob = null;
+      for (let attempt = 0; attempt < 4 && (!blob || blob.size > maxBytes); attempt += 1) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+        const quality = Math.max(0.45, 0.8 - attempt * 0.12);
+        blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+        width = Math.max(1, Math.round(width * 0.75));
+        height = Math.max(1, Math.round(height * 0.75));
+      }
       bitmap.close?.();
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8));
-      if (!blob) throw new Error('encode failed');
+      if (!blob || blob.size > 320 * 1024) throw new Error('That photo is too large.');
       return blob;
-    } catch {
-      if (file.size <= 10 * 1024 * 1024) return file;
-      throw new Error('That photo is too large.');
+    } catch (error) {
+      if (error && error.message === 'That photo is too large.') throw error;
+      if (file.size <= maxBytes && /^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+      throw new Error('That photo could not be added.');
     }
   }
 
@@ -335,7 +369,12 @@
         };
         photos.push(photo);
         track('estimate_photo_added', { count: String(photos.length) });
-        upload(photo, blob);
+        if (await photoBackend === 'r2') upload(photo, blob);
+        else {
+          photo.status = 'ready';
+          photo.progress = 100;
+          renderPhotos();
+        }
       } catch (err) {
         error.textContent = err.message || 'That photo could not be added.';
         error.hidden = false;
@@ -417,6 +456,13 @@
     syncPhotoKeys();
     const data = Object.fromEntries(new FormData(form).entries());
     delete data.photos;
+    if (await photoBackend !== 'r2') {
+      data.photos = [];
+      for (const photo of photos) {
+        if (!photo.blob || photo.status === 'error') continue;
+        data.photos.push({ data: await blobToBase64(photo.blob) });
+      }
+    }
     try {
       data.photoKeys = JSON.parse(data.photoKeys || '[]');
     } catch {

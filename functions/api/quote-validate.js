@@ -1,4 +1,5 @@
 import { clean, normalizePhotoKeys } from './_lib.js';
+import { normalizeInlinePhotos } from './photos.js';
 
 export const SERVICES = new Set([
   '',
@@ -47,6 +48,8 @@ export function validateQuote(data, { demo = false } = {}) {
   const intake = data?.intake === 'estimate' ? 'estimate' : 'callback';
   const photos = normalizePhotoKeys(data?.photoKeys);
   if (photos.error) return { error: photos.error };
+  const inline = normalizeInlinePhotos(data?.photos);
+  if (inline.error) return { error: inline.error };
 
   const payload = {
     intake,
@@ -73,6 +76,7 @@ export function validateQuote(data, { demo = false } = {}) {
     utmContent: clean(data?.utm_content || data?.utmContent, 80),
     utmTerm: clean(data?.utm_term || data?.utmTerm, 80),
     photoKeys: photos.keys,
+    photos: inline.photos,
     source: intake === 'estimate' ? 'TX Mulching website /estimate' : 'TX Mulching website',
     demo,
     submittedAt: new Date().toISOString(),

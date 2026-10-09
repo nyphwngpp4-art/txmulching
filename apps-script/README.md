@@ -50,6 +50,31 @@ in D1 unforwarded) until both sides agree on the token.
 3. `POST` the `/exec` URL with no token. The response is `{ok:false}` and
    the Sheet does not grow.
 
+## Photos (Google Drive)
+
+The Worker does not use R2. It validates each photo (JPEG, PNG, or WebP,
+6 maximum, about 300 KB each after the browser compresses them) and posts
+the bytes as base64 on the same request as the lead. Apps Script writes the
+files, puts the links in the Photo links column, and includes those links in
+the owner email.
+
+1. After pasting `Code.gs`, run `authorizePhotos` once from the editor and
+   approve the Drive permission. It creates a folder named
+   `TX Mulching Lead Photos` (or reuses one with that name) and stores its id
+   in the script property `PHOTO_FOLDER_ID`.
+2. Optional: create the folder yourself, share it with the script's Google
+   account, and set `PHOTO_FOLDER_ID` to that folder's id before the first
+   lead with photos.
+3. Each file is set to "anyone with the link can view" so the owners can open
+   it from the email without a Drive login. The folder itself is not made
+   public. The incoming request stays under Apps Script's about-50 MB limit
+   because six photos at 300 KB are about 2.4 MB of base64.
+4. Redeploy a new version after this change. Until that deploy, production
+   still ignores the `photos` array and the Photo links cell stays empty.
+5. A failed Drive save still writes the Sheet row and sends the email. The
+   Worker does not retry the photo bytes. D1 stores the lead without the
+   image data so a row cannot exceed D1's 1 MB limit.
+
 ## Demo sink
 
 Demo submissions (`?demo=1`) do not call `GOOGLE_SCRIPT_URL`. To keep a copy

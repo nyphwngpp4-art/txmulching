@@ -8,6 +8,8 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method !== 'GET') return methodNotAllowed('GET');
   return json(200, {
-    turnstileSiteKey: env.TURNSTILE_SITE_KEY || ''
+    turnstileSiteKey: env.TURNSTILE_SITE_KEY || '',
+    // "drive" is the live path. "r2" only when the optional binding exists.
+    photos: env.LEAD_PHOTOS ? 'r2' : 'drive'
   });
 }

@@ -60,7 +60,8 @@ function doPost(e) {
     cell_(data.budget),
     cell_(photoLinks_(data)),
     cell_(data.ref),
-    cell_(data.source)
+    cell_(data.source),
+    cell_(data.possibleSpam)
   ]);
 
   if (!demo) {
@@ -183,7 +184,7 @@ function headerRow_() {
   return [
     'Timestamp', 'Name', 'Phone', 'Email', 'ZIP', 'Acreage', 'Service', 'Details',
     'Request ID', 'Address', 'City', 'County', 'Density', 'Timeline',
-    'Callback window', 'Budget', 'Photo links', 'Ref', 'Source'
+    'Callback window', 'Budget', 'Photo links', 'Ref', 'Source', 'Possible spam'
   ];
 }
 
@@ -257,7 +258,14 @@ function subjectFor_(data) {
   var who = shortName_(data.name);
   var phone = data.phone || 'no phone';
   var subject = 'New lead: ' + acres + ' ' + service + ' near ' + where + ' — ' + who + ' ' + phone;
+  if (data.possibleSpam === 'yes' || data.possibleSpam === true) subject = 'Possible spam: ' + subject;
   return subject.slice(0, 180);
+}
+
+function spamWhy_(data) {
+  var why = data.spamReasons;
+  if (Array.isArray(why)) return why.filter(Boolean).join(', ');
+  return why ? String(why) : '';
 }
 
 function shortName_(name) {
@@ -272,7 +280,7 @@ function bodyFor_(data) {
     ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapQuery)
     : '—';
   var photos = photoLinks_(data) || '—';
-  return [
+  var lines = [
     'Name: ' + (data.name || '—'),
     'Phone: ' + (data.phone || '—'),
     'Email: ' + (data.email || '—'),
@@ -295,7 +303,12 @@ function bodyFor_(data) {
     '',
     'Call back: ' + (data.phone || '—'),
     'All leads: https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit'
-  ].join('\n');
+  ];
+  if (data.possibleSpam === 'yes' || data.possibleSpam === true) {
+    var why = spamWhy_(data);
+    lines.unshift('Possible spam: yes' + (why ? ' (' + why + ')' : ''));
+  }
+  return lines.join('\n');
 }
 
 function json_(body) {

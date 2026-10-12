@@ -24,8 +24,9 @@ DEMO_STUB=1
 PHOTO_LINK_SECRET=
 
 # Both must be set or Turnstile stays off and the forms keep working.
+# TURNSTILE_SECRET is still accepted when TURNSTILE_SECRET_KEY is empty.
 TURNSTILE_SITE_KEY=
-TURNSTILE_SECRET=
+TURNSTILE_SECRET_KEY=
 
 # Backup alert after a lead fails to forward three times. Either pair works.
 # If neither is set, the Worker logs backup_alert_not_configured once.

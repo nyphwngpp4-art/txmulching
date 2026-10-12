@@ -11,11 +11,13 @@ import {
   isRateLimited,
   json,
   methodNotAllowed,
+  submittedTooFast,
   timingError,
   validOrigin,
   verifyTurnstile
 } from './_lib.js';
 import { validateQuote } from './quote-validate.js';
+import { applySpam, assessSpam } from './spam.js';
 import {
   forwardStoredLead,
   hasLeadsDb,
@@ -33,6 +35,12 @@ const FORM_MAX = 32_000_000;
 function isHtmlForm(request) {
   const type = request.headers.get('content-type') || '';
   return type.includes('multipart/form-data') || type.includes('application/x-www-form-urlencoded');
+}
+
+function silentAccept(request, html) {
+  return html
+    ? redirectToEstimate(request, { sent: '1' })
+    : json(200, { ok: true });
 }
 
 function redirectToEstimate(request, params) {
@@ -90,11 +98,7 @@ export async function onRequest(context) {
 
   const submission = await readSubmission(request);
   const body = submission.data;
-  if (clean(body.website, 100)) {
-    return html
-      ? redirectToEstimate(request, { sent: '1' })
-      : json(200, { ok: true });
-  }
+  if (clean(body.website, 100)) return silentAccept(request, html);
 
   const turnstile = await verifyTurnstile(request, env, body['cf-turnstile-response'] || body.turnstileToken);
   if (!turnstile.ok) {
@@ -103,8 +107,19 @@ export async function onRequest(context) {
       : json(403, { error: turnstile.error });
   }
 
-  const timing = timingError(body, { waive: html });
-  if (timing) return json(400, { error: timing });
+  // No-JS posts have no elapsedMs. A reported time under ~3s is dropped
+  // quietly so a bot is not told to wait and retry.
+  const hasElapsed = Number.isFinite(Number(body.elapsedMs)) || Number.isFinite(Number(body.formStartedAt));
+  if (submittedTooFast(body)) {
+    console.error(JSON.stringify({ event: 'quote_fast_drop' }));
+    return silentAccept(request, html);
+  }
+  const timing = timingError(body, { waive: html && !hasElapsed });
+  if (timing) {
+    return html
+      ? redirectToEstimate(request, { error: timing })
+      : json(400, { error: timing });
+  }
 
   const demo = demoFromRequest(body, request);
   const validated = validateQuote(body, { demo });
@@ -121,6 +136,11 @@ export async function onRequest(context) {
       if (ref) payload.ref = clean(ref, 40);
     } catch { /* no referer */ }
   }
+
+  const spam = await assessSpam(env, payload);
+  const verdict = applySpam(payload, spam);
+  // Demo never reaches the owner Sheet, including when the text looks like spam.
+  if (!demo && verdict === 'spam') return finishSpam(request, env, payload, html);
 
   if (!env.LEAD_PHOTOS && submission.files.length) {
     const fromFiles = await filesToDrivePhotos(submission.files);
@@ -183,10 +203,34 @@ async function finishDemo(request, env, ctx, payload, html) {
     : json(200, body);
 }
 
-async function finishReal(request, env, ctx, payload, html) {
+async function finishSpam(request, env, payload, html) {
+  console.error(JSON.stringify({
+    event: 'quote_spam',
+    requestId: payload.requestId,
+    score: payload.spamScore || 0,
+    reasons: payload.spamReasons || []
+  }));
   if (hasLeadsDb(env)) {
     try {
-      await insertLead(env, payload);
+      await insertLead(env, payload, { status: 'spam' });
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: 'quote_spam_store_failed',
+        requestId: payload.requestId,
+        error: error?.message || String(error)
+      }));
+    }
+  }
+  return html
+    ? redirectToEstimate(request, { sent: '1', id: payload.requestId })
+    : json(200, { ok: true, requestId: payload.requestId });
+}
+
+async function finishReal(request, env, ctx, payload, html) {
+  const status = payload.possibleSpam === 'yes' ? 'possible' : 'new';
+  if (hasLeadsDb(env)) {
+    try {
+      await insertLead(env, payload, { status });
       const job = forwardStoredLead(env, payload);
       if (ctx?.waitUntil) ctx.waitUntil(job);
       else await job;

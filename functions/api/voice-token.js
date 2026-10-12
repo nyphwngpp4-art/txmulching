@@ -4,7 +4,8 @@
 //
 // Origin alone is not enough: a non-browser client can set it. Sec-Fetch-Site
 // blocks ordinary cross-site browser calls and naive curl. A client that
-// forges that header still needs a Turnstile token once TURNSTILE_SECRET is set.
+// forges that header still needs a Turnstile token once TURNSTILE_SITE_KEY and
+// TURNSTILE_SECRET_KEY are both set. Until then the check is skipped.
 
 import {
   browserSameOrigin,

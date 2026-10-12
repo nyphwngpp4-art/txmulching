@@ -56,7 +56,7 @@ Recommended:
 - `GOOGLE_SCRIPT_URL`: deployed Google Apps Script quote endpoint. There is no fallback URL in the Worker. If this is missing and D1 is also missing, `/api/quote` returns 503.
 - `APPS_SCRIPT_TOKEN`: shared secret the Worker sends and `Code.gs` requires. Set it in the same change as the script deploy.
 - `ALLOWED_ORIGINS`: comma-separated production origins, such as `https://txmulching.com,https://www.txmulching.com`
-- `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET`: both required before Turnstile is enforced. If either is missing, forms keep working and the check is skipped.
+- `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`: both required before Turnstile is enforced. If either is missing, forms keep working and the check is skipped. `TURNSTILE_SECRET` is still accepted as the secret when `TURNSTILE_SECRET_KEY` is unset. See `docs/spam-protection.md`.
 - `DEMO_SCRIPT_URL`: optional second Apps Script for `?demo=1` leads. Demo posts never use `GOOGLE_SCRIPT_URL`.
 - `PHOTO_LINK_SECRET`: HMAC key for the optional R2 photo links. The live path stores photos in Google Drive through Apps Script and does not need this secret. It is already set; leave it as a secret.
 - `RESEND_API_KEY` plus `BACKUP_ALERT_EMAIL`, or `BACKUP_ALERT_URL`: backup notice after a stored lead fails to forward three times.
@@ -65,7 +65,7 @@ Bindings in `wrangler.jsonc` (`LEADS` and the rate limits) have to exist in the 
 
 The chat interface is included in the site but will return a clear “not activated” message until `XAI_API_KEY` is configured.
 
-The API routes validate origin and request size. Quote, photo, chat, and voice use Workers Rate Limiting bindings, with an in-memory fallback if a binding is missing. Chat and voice-token refuse a missing `Origin`. Voice-token also requires `Sec-Fetch-Site: same-origin`, and a Turnstile token once `TURNSTILE_SECRET` is set. Rate limits are per Cloudflare location, not a global counter.
+The API routes validate origin and request size. Quote, photo, chat, and voice use Workers Rate Limiting bindings, with an in-memory fallback if a binding is missing. Chat and voice-token refuse a missing `Origin`. Voice-token also requires `Sec-Fetch-Site: same-origin`, and a Turnstile token once both Turnstile keys are set. `/api/quote` drops a filled honeypot or a submit faster than about 3 seconds without storing it, and scores the message before forwarding. High scores are stored in D1 with status `spam` and are not sent to the Sheet. Rate limits are per Cloudflare location, not a global counter. Details: `docs/spam-protection.md`.
 
 The chat endpoint sends only the recent conversation and verified business context to xAI. It uses the Responses API with `store: false`, which instructs xAI not to store the request and response for conversation continuation. It also limits message length, excludes sensitive-data requests, never quotes prices, and does not expose the API key in the browser.
 

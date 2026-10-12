@@ -59,7 +59,7 @@ export function validateQuote(data, { demo = false } = {}) {
     zipcode: clean(data?.zipcode, 10),
     acreage: clean(data?.acreage, 40),
     serviceType: clean(data?.serviceType, 80),
-    description: clean(data?.description, 1500),
+    description: clean(data?.description || data?.message, 1500),
     address: clean(data?.address, 160),
     city: clean(data?.city, 80),
     county: clean(data?.county, 80),

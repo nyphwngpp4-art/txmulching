@@ -16,9 +16,12 @@ in D1 unforwarded) until both sides agree on the token.
 2. Add a header row on the leads Sheet if columns J–S are empty. The script
    writes them on every new row. Headers, in order, starting at J:
 
-   Address, City, County, Density, Timeline, Callback window, Budget, Photo links, Ref, Source
+   Address, City, County, Density, Timeline, Callback window, Budget, Photo links, Ref, Source, Possible spam
 
    A–I stay: Timestamp, Name, Phone, Email, ZIP, Acreage, Service, Details, Request ID.
+   Column T, Possible spam, is `yes` only for a borderline lead. High-score spam
+   never reaches this Sheet. Until this script is redeployed, the Worker still
+   forwards borderline leads and the live script ignores the extra JSON field.
 3. Generate a long random token (`openssl rand -hex 32`). You will put the
    same value in two places.
 

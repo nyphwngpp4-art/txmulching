@@ -1,6 +1,7 @@
 import { env, fetchMock } from 'cloudflare:test';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { sheetSafe, sniffImage, timingError } from '../functions/api/_lib.js';
+import { sheetSafe, sniffImage, submittedTooFast, timingError, verifyTurnstile } from '../functions/api/_lib.js';
+import { scoreSpam } from '../functions/api/spam.js';
 import { onRequest as quote } from '../functions/api/quote.js';
 import { onRequest as quotePhoto } from '../functions/api/quote-photo.js';
 import { onRequest as voiceToken } from '../functions/api/voice-token.js';
@@ -59,9 +60,12 @@ const estimateBody = {
 describe('timing and sheet safety', () => {
   it('rejects a 1s elapsed time and accepts 5s and 3h', () => {
     expect(timingError({ elapsedMs: 1000 })).toMatch(/wait a moment/i);
+    expect(submittedTooFast({ elapsedMs: 1000 })).toBe(true);
     expect(timingError({ elapsedMs: 5000 })).toBeNull();
+    expect(submittedTooFast({ elapsedMs: 5000 })).toBe(false);
     expect(timingError({ elapsedMs: 10_800_000 })).toBeNull();
     expect(timingError({ elapsedMs: -50 })).toMatch(/wait a moment/i);
+    expect(submittedTooFast({})).toBe(false);
   });
 
   it('prefixes formula-like values once', () => {
@@ -79,6 +83,41 @@ describe('timing and sheet safety', () => {
     expect(sniffImage(webp)?.ext).toBe('webp');
     const exe = new Uint8Array([0x4d, 0x5a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     expect(sniffImage(exe)).toBeNull();
+  });
+});
+
+describe('spam score', () => {
+  it('ignores "within a month" and flags a price pitch', () => {
+    const timeline = scoreSpam({
+      description: 'Brush: Wall of trees. Timeline: Within a month. Callback: Morning.',
+      zipcode: '75701',
+      acreage: '3-10 acres'
+    });
+    expect(timeline.verdict).toBe('ok');
+    expect(timeline.reasons).not.toContain('priced_pitch');
+
+    const pitch = scoreSpam({
+      description: 'SEO plans from $199/mo',
+      zipcode: '75701',
+      acreage: '1-3 acres'
+    });
+    expect(pitch.verdict).toBe('spam');
+    expect(pitch.reasons).toEqual(expect.arrayContaining(['seo', 'priced_pitch']));
+
+    const far = scoreSpam({
+      description: 'Clear the back pasture',
+      zipcode: '75961',
+      acreage: '3-10 acres'
+    });
+    expect(far.verdict).toBe('ok');
+    expect(far.reasons).toEqual(['zip_out_of_area']);
+
+    const phish = scoreSpam({
+      description: 'farm project, please send the files',
+      zipcode: '10001',
+      acreage: ''
+    });
+    expect(phish.verdict).toBe('spam');
   });
 });
 
@@ -322,7 +361,234 @@ describe('photos and voice', () => {
     expect(denied.status).toBe(403);
     await denied.arrayBuffer().catch(() => {});
   });
+});
 
+describe('lead spam protection', () => {
+  it('drops a too-fast submit without storing it', async () => {
+    const response = await quote({
+      request: quoteRequest({ ...estimateBody, name: 'FAST-DROP-NAME', elapsedMs: 1000 }, { ip: '203.0.113.80' }),
+      env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+      ctx: ctx()
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.requestId).toBeUndefined();
+    const row = await env.LEADS.prepare(
+      `SELECT request_id FROM leads WHERE payload_json LIKE ?`
+    ).bind('%FAST-DROP-NAME%').all().catch(() => ({ results: [] }));
+    expect(row.results || []).toHaveLength(0);
+  });
+
+  it('stores a sales pitch as spam and does not forward it', async () => {
+    const response = await quote({
+      request: quoteRequest({
+        ...estimateBody,
+        name: 'SEO Growth',
+        email: 'pitch@example.com',
+        description: 'SEO backlinks $199/mo. Unsubscribe http://rank.example'
+      }, { ip: '203.0.113.81' }),
+      env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+      ctx: ctx()
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.requestId).toBeTruthy();
+    const row = await env.LEADS.prepare(
+      'SELECT status, forwarded_at, payload_json FROM leads WHERE request_id = ?'
+    ).bind(body.requestId).first();
+    expect(row.status).toBe('spam');
+    expect(row.forwarded_at).toBeNull();
+    expect(row.payload_json).toContain('priced_pitch');
+
+    await env.LEADS.prepare(
+      `UPDATE leads SET forwarded_at = '2000-01-01T00:00:00.000Z' WHERE request_id != ? AND forwarded_at IS NULL`
+    ).bind(body.requestId).run();
+    const retried = await retryUnforwarded({ ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' });
+    expect(retried.retried).toBe(0);
+    const after = await env.LEADS.prepare(
+      'SELECT forwarded_at FROM leads WHERE request_id = ?'
+    ).bind(body.requestId).first();
+    expect(after.forwarded_at).toBeNull();
+  });
+
+  it('forwards a single link as possible spam and still forwards a far ZIP', async () => {
+    let forwarded = null;
+    const original = globalThis.fetch;
+    globalThis.fetch = async (_input, init) => {
+      forwarded = JSON.parse(init.body);
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    };
+    try {
+      const wait = ctx();
+      const flagged = await quote({
+        request: quoteRequest({
+          ...estimateBody,
+          email: 'link-only@example.com',
+          description: 'Brush photos: https://photos.example.com/lot'
+        }, { ip: '203.0.113.82' }),
+        env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+        ctx: wait
+      });
+      expect(flagged.status).toBe(200);
+      await wait.drain();
+      expect(forwarded.possibleSpam).toBe('yes');
+      expect(forwarded.spamReasons).toContain('url');
+      const flaggedBody = await flagged.json();
+      const flaggedRow = await env.LEADS.prepare(
+        'SELECT status FROM leads WHERE request_id = ?'
+      ).bind(flaggedBody.requestId).first();
+      expect(flaggedRow.status).toBe('possible');
+
+      forwarded = null;
+      const farWait = ctx();
+      const far = await quote({
+        request: quoteRequest({
+          ...estimateBody,
+          email: 'nacogdoches@example.com',
+          phone: '(903) 555-0177',
+          zipcode: '75961'
+        }, { ip: '203.0.113.83' }),
+        env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+        ctx: farWait
+      });
+      expect(far.status).toBe(200);
+      await farWait.drain();
+      expect(forwarded.possibleSpam).toBeUndefined();
+      expect(forwarded.zipcode).toBe('75961');
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it('treats a second SEO pitch within 10 minutes as spam', async () => {
+    const original = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    };
+    try {
+      const firstWait = ctx();
+      const first = await quote({
+        request: quoteRequest({
+          ...estimateBody,
+          name: 'Sam',
+          email: 'dup-seo@example.com',
+          phone: '(903) 555-0199',
+          description: 'We do SEO for local businesses'
+        }, { ip: '203.0.113.84' }),
+        env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+        ctx: firstWait
+      });
+      expect(first.status).toBe(200);
+      await firstWait.drain();
+      expect(calls).toBe(1);
+
+      const second = await quote({
+        request: quoteRequest({
+          ...estimateBody,
+          name: 'Sam',
+          email: 'dup-seo@example.com',
+          phone: '9035550199',
+          description: 'We do SEO for local businesses'
+        }, { ip: '203.0.113.85' }),
+        env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+        ctx: ctx()
+      });
+      expect(second.status).toBe(200);
+      expect(calls).toBe(1);
+      const body = await second.json();
+      const row = await env.LEADS.prepare(
+        'SELECT status, payload_json FROM leads WHERE request_id = ?'
+      ).bind(body.requestId).first();
+      expect(row.status).toBe('spam');
+      expect(row.payload_json).toContain('duplicate');
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it('keeps a demo sales pitch off the owner script', async () => {
+    const response = await quote({
+      request: quoteRequest({
+        ...estimateBody,
+        demo: '1',
+        ref: 'p07',
+        description: 'SEO $199/mo unsubscribe https://spam.example'
+      }, { ip: '203.0.113.86' }),
+      env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+      ctx: ctx()
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.demo).toBe(true);
+    const real = await env.LEADS.prepare(
+      'SELECT request_id FROM leads WHERE request_id = ?'
+    ).bind(body.requestId).first();
+    expect(real).toBeNull();
+    const demo = await env.LEADS.prepare(
+      'SELECT payload_json FROM demo_leads WHERE request_id = ?'
+    ).bind(body.requestId).first();
+    expect(demo?.payload_json).toContain('p07');
+  });
+
+  it('skips Turnstile until both keys exist and checks siteverify when they do', async () => {
+    const skipped = await verifyTurnstile(
+      new Request('https://txmulching.test/api/quote'),
+      { TURNSTILE_SECRET_KEY: 'secret-only' },
+      ''
+    );
+    expect(skipped.skipped).toBe(true);
+
+    const siteOnly = await quote({
+      request: quoteRequest({ ...estimateBody, demo: '1', email: 'turnstile-site-only@example.com' }, { ip: '203.0.113.87' }),
+      env: { ...env, TURNSTILE_SITE_KEY: 'site-only', GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+      ctx: ctx()
+    });
+    expect(siteOnly.status).toBe(200);
+    expect((await siteOnly.json()).demo).toBe(true);
+
+    fetchMock
+      .get('https://challenges.cloudflare.com')
+      .intercept({ path: '/turnstile/v0/siteverify', method: 'POST' })
+      .reply(200, { success: false });
+    const blocked = await quote({
+      request: quoteRequest({
+        ...estimateBody,
+        email: 'turnstile-blocked@example.com',
+        'cf-turnstile-response': 'bad-token'
+      }, { ip: '203.0.113.88' }),
+      env: { ...env, TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' },
+      ctx: ctx()
+    });
+    expect(blocked.status).toBe(403);
+
+    fetchMock
+      .get('https://challenges.cloudflare.com')
+      .intercept({ path: '/turnstile/v0/siteverify', method: 'POST' })
+      .reply(200, { success: true });
+    const passed = await quote({
+      request: quoteRequest({
+        ...estimateBody,
+        demo: '1',
+        ref: 'widget',
+        email: 'turnstile-ok@example.com',
+        'cf-turnstile-response': 'ok-token'
+      }, { ip: '203.0.113.89' }),
+      env: {
+        ...env,
+        TURNSTILE_SITE_KEY: 'site',
+        TURNSTILE_SECRET: 'legacy-secret-name',
+        GOOGLE_SCRIPT_URL: 'https://script.test/exec'
+      },
+      ctx: ctx()
+    });
+    expect(passed.status).toBe(200);
+    expect((await passed.json()).demo).toBe(true);
+  });
+});
+
+describe('voice', () => {
   it('refuses a voice token that is not from the same origin', async () => {
     const spoofed = await voiceToken({
       request: new Request('https://txmulching.test/api/voice-token', {

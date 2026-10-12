@@ -12,7 +12,8 @@ export const SCHEMA_STATEMENTS = [
     attempts INTEGER NOT NULL DEFAULT 0,
     last_error TEXT,
     last_attempt_at TEXT,
-    backup_alerted_at TEXT
+    backup_alerted_at TEXT,
+    status TEXT NOT NULL DEFAULT 'new'
   )`,
   `CREATE TABLE IF NOT EXISTS demo_leads (
     request_id TEXT PRIMARY KEY,
@@ -29,12 +30,23 @@ export function hasLeadsDb(env) {
   return Boolean(env?.LEADS && typeof env.LEADS.prepare === 'function');
 }
 
+async function ensureStatusColumn(env) {
+  const info = await env.LEADS.prepare('PRAGMA table_info(leads)').all();
+  const rows = info?.results || [];
+  if (rows.some((column) => column.name === 'status')) return;
+  await env.LEADS.prepare(
+    `ALTER TABLE leads ADD COLUMN status TEXT NOT NULL DEFAULT 'new'`
+  ).run();
+}
+
 export async function ensureSchema(env) {
   if (!hasLeadsDb(env)) return false;
   // CREATE IF NOT EXISTS is cheap and keeps a wiped local database usable.
+  // It does not add columns to a table created before `status` existed.
   for (const statement of SCHEMA_STATEMENTS) {
     await env.LEADS.prepare(statement).run();
   }
+  await ensureStatusColumn(env);
   return true;
 }
 
@@ -59,12 +71,17 @@ function scriptBody(payload, env) {
   return body;
 }
 
-export async function insertLead(env, payload) {
+export async function insertLead(env, payload, { status = 'new' } = {}) {
   await ensureSchema(env);
   await env.LEADS.prepare(
-    `INSERT INTO leads (request_id, created_at, payload_json, attempts)
-     VALUES (?, ?, ?, 0)`
-  ).bind(payload.requestId, payload.submittedAt, JSON.stringify(storedPayload(payload))).run();
+    `INSERT INTO leads (request_id, created_at, payload_json, attempts, status)
+     VALUES (?, ?, ?, 0, ?)`
+  ).bind(
+    payload.requestId,
+    payload.submittedAt,
+    JSON.stringify(storedPayload(payload)),
+    status === 'spam' || status === 'possible' ? status : 'new'
+  ).run();
 }
 
 export async function insertDemoLead(env, payload) {
@@ -236,7 +253,7 @@ export async function retryUnforwarded(env) {
   const { results } = await env.LEADS.prepare(
     `SELECT request_id, payload_json, attempts, last_attempt_at, backup_alerted_at
      FROM leads
-     WHERE forwarded_at IS NULL AND attempts < 8
+     WHERE forwarded_at IS NULL AND attempts < 8 AND COALESCE(status, 'new') != 'spam'
      ORDER BY created_at
      LIMIT 20`
   ).all();

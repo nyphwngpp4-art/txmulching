@@ -18,6 +18,8 @@ Quote Leads"** Sheet and then sends alerts.
 Email only — no SMS gateways (owner decision, Aug 2026). Every lead goes to
 Kim, Hal, the business address, and Jay as a backstop.
 
+High-score junk (sales pitches, unsubscribe links, repeated contact details) is stored in D1 with status `spam` and is not emailed. A borderline lead is still emailed. After the Apps Script redeploy, that email subject starts with "Possible spam". See [`docs/spam-protection.md`](docs/spam-protection.md).
+
 The script that should be deployed is [`apps-script/Code.gs`](apps-script/Code.gs).
 Follow [`apps-script/README.md`](apps-script/README.md): paste it into the Apps
 Script project, set the `TOKEN` script property, deploy a new version, and set

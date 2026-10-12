@@ -1,6 +1,6 @@
-/* Loads Cloudflare Turnstile only when the Worker has a site key.
-   When TURNSTILE_SITE_KEY is empty, token() resolves to '' and the server
-   skips the check until TURNSTILE_SECRET is set too. */
+/* Loads Cloudflare Turnstile only when /api/public-config returns a site key.
+   token() resolves to '' when TURNSTILE_SITE_KEY is empty. The server skips
+   siteverify until TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY are both set. */
 (() => {
   'use strict';
 

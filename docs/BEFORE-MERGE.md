@@ -27,10 +27,13 @@ branch was deployed, and no test lead was sent to the owners.
    `GOOGLE_SCRIPT_URL` is still the live `/exec` URL and still type Secret.
    Search Workers Logs for `GOOGLE_SCRIPT_URL not configured`,
    `quote_forward_failed`, and `quote_store_failed` since 28 Sep 2026.
-2. Turnstile is still pending. Create a widget for `txmulching.com` (managed
-   or invisible). Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET` together.
+2. Turnstile is still pending. Create a Managed widget for `txmulching.com`
+   and `www.txmulching.com`, then set `TURNSTILE_SITE_KEY` and
+   `TURNSTILE_SECRET_KEY` together. Steps are in `docs/spam-protection.md`.
    Until both are set, the forms skip the check on purpose so the homepage
-   callback form keeps working.
+   callback form keeps working. `TURNSTILE_SECRET` still works as the secret
+   if `TURNSTILE_SECRET_KEY` is unset. Do not add either name to `secrets.required`
+   until the keys exist, or deploy will fail while they are empty.
 3. Rate-limit bindings (`QUOTE_RL`, `PHOTO_RL`, `CHAT_RL`, `VOICE_RL`) are
    declared in `wrangler.jsonc` and are created on deploy. They count per
    Cloudflare location, keyed by IP.
@@ -50,8 +53,11 @@ branch was deployed, and no test lead was sent to the owners.
 
 ## Google (agavi.aiconsulting@gmail.com)
 
-1. Add Sheet headers J through S if they are empty: Address, City, County,
-   Density, Timeline, Callback window, Budget, Photo links, Ref, Source.
+1. Add Sheet headers J through T if they are empty: Address, City, County,
+   Density, Timeline, Callback window, Budget, Photo links, Ref, Source,
+   Possible spam. Apply D1 migration `0002_lead_status.sql` before relying on
+   spam status (`npx wrangler d1 migrations apply txm-leads --remote`). The
+   Worker adds the column on first use if the migration has not been applied.
 2. Paste `apps-script/Code.gs`, set script property `TOKEN` to the same value
    as `APPS_SCRIPT_TOKEN`, run `authorizePhotos` once, and deploy a new
    version. That creates the Drive folder `TX Mulching Lead Photos`. Steps:

@@ -122,6 +122,14 @@ export function demoFromRequest(data, request) {
 const ELAPSED_MIN_MS = 3000;
 const ELAPSED_MAX_MS = 24 * 60 * 60 * 1000;
 
+// True when the page itself reported a submit faster than about 3 seconds.
+// The quote route accepts that response and drops it. A missing elapsedMs is
+// not treated as fast: older cached pages still get timingError instead.
+export function submittedTooFast(data) {
+  const elapsed = Number(data?.elapsedMs);
+  return Number.isFinite(elapsed) && elapsed < ELAPSED_MIN_MS;
+}
+
 export function timingError(data, { waive = false } = {}) {
   if (waive) return null;
   const elapsed = Number(data?.elapsedMs);
@@ -140,11 +148,20 @@ export function timingError(data, { waive = false } = {}) {
   return 'Please wait a moment and tap Send again.';
 }
 
+// Both keys have to be set. TURNSTILE_SECRET is the older name for the secret.
+export function turnstileSecret(env) {
+  return String(env?.TURNSTILE_SECRET_KEY || env?.TURNSTILE_SECRET || '').trim();
+}
+
+export function turnstileActive(env) {
+  return Boolean(String(env?.TURNSTILE_SITE_KEY || '').trim() && turnstileSecret(env));
+}
+
 export async function verifyTurnstile(request, env, token) {
-  if (!env.TURNSTILE_SECRET) return { ok: true, skipped: true };
+  if (!turnstileActive(env)) return { ok: true, skipped: true };
   if (!token) return { ok: false, error: 'Bot check failed. Please try again.' };
   const body = new URLSearchParams();
-  body.set('secret', env.TURNSTILE_SECRET);
+  body.set('secret', turnstileSecret(env));
   body.set('response', String(token));
   const ip = getClientIp(request);
   if (ip && ip !== 'unknown') body.set('remoteip', ip);

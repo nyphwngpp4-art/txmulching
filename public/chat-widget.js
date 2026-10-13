@@ -37,7 +37,7 @@
           <button type="submit">Send</button>
         </div>
         <div class="chat-error" hidden></div>
-        <p class="chat-note">AI assistant &mdash; for a quote, <a href="/#quote">request a callback</a> or call ${PHONE_DISPLAY}.</p>
+        <p class="chat-note">This assistant can be wrong. A quote comes only from a <a href="/#quote">callback</a> or a phone call to ${PHONE_DISPLAY}.</p>
       </form>
     </div>`;
   document.body.appendChild(root);
@@ -93,10 +93,37 @@
     toggle.focus();
   }
   closeBtn.addEventListener('click', closePanel);
+  function focusableIn(container) {
+    return [...container.querySelectorAll('a[href], button, input, textarea, select')].filter((el) => {
+      if (el.disabled || el.closest('[hidden]')) return false;
+      return true;
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || panel.hidden) return;
-    event.stopPropagation();
-    closePanel();
+    if (event.key === 'Escape' && !panel.hidden) {
+      event.stopPropagation();
+      closePanel();
+      return;
+    }
+    if (event.key !== 'Tab' || panel.hidden) return;
+    const items = focusableIn(panel);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    if (!panel.contains(active)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+      return;
+    }
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
   document.addEventListener('focusin', (event) => {
     const tag = event.target && event.target.tagName;
@@ -124,10 +151,12 @@
     const thinking = bubble('assistant', 'Thinking…', true);
     input.disabled = true; send.disabled = true;
     try {
+      let turnstileToken = '';
+      if (window.txTurnstile) turnstileToken = await window.txTurnstile.token();
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history.slice(-12) })
+        body: JSON.stringify({ messages: history.slice(-12), turnstileToken })
       });
       const data = await res.json().catch(() => ({}));
       thinking.parentElement.remove();
@@ -227,8 +256,14 @@
         // ScriptProcessorNode is deprecated. Planned follow-up: move this PCM
         // tap into an AudioWorklet served from /audio-worklet.js and keep this
         // node only when AudioWorklet is missing (older iOS).
+        // The processor has to stay in the graph or the browser stops the
+        // callback. A zero-gain node keeps that without playing the mic.
         procNode = audioCtx.createScriptProcessor(4096, 1, 1);
-        srcNode.connect(procNode); procNode.connect(audioCtx.destination);
+        const silent = audioCtx.createGain();
+        silent.gain.value = 0;
+        srcNode.connect(procNode);
+        procNode.connect(silent);
+        silent.connect(audioCtx.destination);
         procNode.onaudioprocess = (ev) => {
           if (!ws || ws.readyState !== 1) return;
           const pcm = floatTo16(ev.inputBuffer.getChannelData(0));

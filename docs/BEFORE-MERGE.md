@@ -45,22 +45,25 @@ branch was deployed, and no test lead was sent to the owners.
 5. Optional: `DEMO_SCRIPT_URL` for a second Apps Script deployment that
    records demo tries. Without it, demo rows still land in D1 `demo_leads`
    and are not emailed to the owners.
-6. xAI console: set a monthly spend cap. Voice tokens can still be minted by
-   a client that forges `Origin` and `Sec-Fetch-Site` until Turnstile is on.
+6. xAI console: set a monthly spend cap. Chat and voice stay off until both
+   Turnstile keys are set. The quote form still accepts leads without them.
 7. Confirm every subdomain is HTTPS-only before anyone submits
-   `txmulching.com` to the HSTS preload list. The header already sends
-   `includeSubDomains; preload`. This branch does not submit the domain.
+   `txmulching.com` to the HSTS preload list. The header sends
+   `includeSubDomains` and does not send `preload`. This branch does not
+   submit the domain.
 
-## Google (agavi.aiconsulting@gmail.com)
+## Google
 
 1. Add Sheet headers J through T if they are empty: Address, City, County,
    Density, Timeline, Callback window, Budget, Photo links, Ref, Source,
    Possible spam. Apply D1 migration `0002_lead_status.sql` before relying on
    spam status (`npx wrangler d1 migrations apply txm-leads --remote`). The
    Worker adds the column on first use if the migration has not been applied.
-2. Paste `apps-script/Code.gs`, set script property `TOKEN` to the same value
-   as `APPS_SCRIPT_TOKEN`, run `authorizePhotos` once, and deploy a new
-   version. That creates the Drive folder `TX Mulching Lead Photos`. Steps:
+2. Set script properties `SHEET_ID` and `NOTIFY_EMAILS` before pasting the new
+   `apps-script/Code.gs`. Copy both values from the previous script. Also set
+   `TOKEN` to the same value as `APPS_SCRIPT_TOKEN`. Then paste the file, run
+   `authorizePhotos` once, and deploy a new version. Photos are private to the
+   script owner and shared only with the notify addresses. Steps:
    `apps-script/README.md`.
 3. Run `testNotification` once, then submit one lead named `TEST — delete me`
    and delete that row. Do this only after the Worker secret is set.
@@ -70,13 +73,14 @@ branch was deployed, and no test lead was sent to the owners.
 
 1. They already said no prices on the site. This page does not show a budget
    field. `SHOW_BUDGET` in `public/estimate.js` stays `false` until they
-   approve the wording. The API will store a `budget` string if a future
-   client sends one.
+   approve the wording. The API rejects a `budget` value while that is off.
 2. No new response-time promise was added. Copy says the owner reviews the
    request and calls back, which is already on the homepage.
-3. Confirm Agavi may show the dismissible "Live demo by Agavi AI" bar only
-   when the URL contains `demo=1`. A `ref` alone does not turn on demo mode,
-   so a real customer link with a tracking ref still reaches the owners.
+3. The dismissible "Live demo by Agavi AI" bar is on only when the current
+   URL contains `demo=1`. Leaving that page clears the stored demo flag.
+   Dismissing the bar does not turn demo mode on. A `ref` alone does not
+   turn on demo mode, so a real customer link with a tracking ref still
+   reaches the owners.
 4. Do not send follow-ups to the 44 prospects until this is live. Old `/estimate`
    visits may still be stuck on the cached 301. New links need a query string
    that was never 301'd, for example

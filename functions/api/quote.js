@@ -6,8 +6,8 @@
 import {
   callUs,
   clean,
-  contentTooLarge,
   demoFromRequest,
+  enforceBodyLimit,
   isRateLimited,
   json,
   methodNotAllowed,
@@ -17,7 +17,7 @@ import {
   verifyTurnstile
 } from './_lib.js';
 import { validateQuote } from './quote-validate.js';
-import { applySpam, assessSpam } from './spam.js';
+import { applySpam, assessSpam, spamDisposition } from './spam.js';
 import {
   forwardStoredLead,
   hasLeadsDb,
@@ -76,8 +76,15 @@ async function readSubmission(request) {
   return { data, files, html };
 }
 
+function reject(request, html, status, code, message) {
+  return html
+    ? redirectToEstimate(request, { error: code })
+    : json(status, { error: message });
+}
+
 export async function onRequest(context) {
-  const { request, env, ctx } = context;
+  let { request } = context;
+  const { env, ctx } = context;
 
   if (request.method !== 'POST') return methodNotAllowed('POST');
   if (!validOrigin(request, env, { allowMissing: true })) {
@@ -85,26 +92,22 @@ export async function onRequest(context) {
   }
 
   const html = isHtmlForm(request);
-  if (contentTooLarge(request, html ? FORM_MAX : JSON_MAX)) {
-    return html
-      ? redirectToEstimate(request, { error: 'That submission is too large.' })
-      : json(413, { error: 'Request is too large.' });
+  const limited = await enforceBodyLimit(request, html ? FORM_MAX : JSON_MAX);
+  if (limited.tooLarge) {
+    return reject(request, html, 413, 'too_large', 'Request is too large.');
   }
+  request = limited.request;
 
   if (await isRateLimited(request, env, 'QUOTE_RL', 5, 60_000)) {
-    const error = 'Too many requests. Please wait before trying again.';
-    return html ? redirectToEstimate(request, { error }) : json(429, { error });
+    return reject(request, html, 429, 'rate_limit', 'Too many requests. Please wait before trying again.');
   }
 
   const submission = await readSubmission(request);
   const body = submission.data;
-  if (clean(body.website, 100)) return silentAccept(request, html);
 
   const turnstile = await verifyTurnstile(request, env, body['cf-turnstile-response'] || body.turnstileToken);
   if (!turnstile.ok) {
-    return html
-      ? redirectToEstimate(request, { error: turnstile.error })
-      : json(403, { error: turnstile.error });
+    return reject(request, html, 403, 'bot_check', turnstile.error);
   }
 
   // No-JS posts have no elapsedMs. A reported time under ~3s is dropped
@@ -116,20 +119,21 @@ export async function onRequest(context) {
   }
   const timing = timingError(body, { waive: html && !hasElapsed });
   if (timing) {
-    return html
-      ? redirectToEstimate(request, { error: timing })
-      : json(400, { error: timing });
+    return reject(request, html, 400, 'timing', timing);
   }
 
   const demo = demoFromRequest(body, request);
   const validated = validateQuote(body, { demo });
   if (validated.error) {
-    return html
-      ? redirectToEstimate(request, { error: validated.error })
-      : json(400, { error: validated.error });
+    return reject(request, html, 400, 'invalid', validated.error);
   }
 
   const payload = validated.payload;
+  // txm_hp is the current field. `website` is the old name, still honored so a
+  // cached page keeps the trap. A hit is stored for review and not emailed.
+  if (clean(body.txm_hp || body.website, 200)) {
+    return finishHoneypot(request, env, payload, html);
+  }
   if (!payload.ref) {
     try {
       const ref = new URL(request.headers.get('referer') || '').searchParams.get('ref');
@@ -138,16 +142,21 @@ export async function onRequest(context) {
   }
 
   const spam = await assessSpam(env, payload);
-  const verdict = applySpam(payload, spam);
+  applySpam(payload, spam);
+  const disposition = spamDisposition(spam);
   // Demo never reaches the owner Sheet, including when the text looks like spam.
-  if (!demo && verdict === 'spam') return finishSpam(request, env, payload, html);
+  // An obvious pitch (sales phrase or link) at a high score is stored and not
+  // emailed. Any other high score is flagged and still sent to the owners.
+  if (!demo && disposition === 'spam') return finishSpam(request, env, payload, html);
+  if (!demo && disposition === 'review') {
+    payload.possibleSpam = 'yes';
+    payload.needsReview = 'yes';
+  }
 
   if (!env.LEAD_PHOTOS && submission.files.length) {
     const fromFiles = await filesToDrivePhotos(submission.files);
     if (fromFiles.error) {
-      return html
-        ? redirectToEstimate(request, { error: fromFiles.error })
-        : json(400, { error: fromFiles.error });
+      return reject(request, html, 400, 'invalid', fromFiles.error);
     }
     payload.photos = [...(payload.photos || []), ...fromFiles.photos].slice(0, 6);
   }
@@ -168,6 +177,30 @@ export async function onRequest(context) {
 
   if (demo) return finishDemo(request, env, ctx, payload, html);
   return finishReal(request, env, ctx, payload, html);
+}
+
+async function finishHoneypot(request, env, payload, html) {
+  payload.honeypot = 'yes';
+  console.error(JSON.stringify({ event: 'quote_honeypot', requestId: payload.requestId }));
+  if (hasLeadsDb(env)) {
+    try {
+      await insertLead(env, payload, { status: 'honeypot' });
+    } catch {
+      console.error(JSON.stringify({
+        event: 'honeypot_store_failed',
+        requestId: payload.requestId
+      }));
+    }
+  } else {
+    console.error(JSON.stringify({ event: 'honeypot_not_stored', requestId: payload.requestId }));
+  }
+  return reject(
+    request,
+    html,
+    400,
+    'review',
+    callUs('We could not send that from the form.')
+  );
 }
 
 async function finishDemo(request, env, ctx, payload, html) {
@@ -248,14 +281,12 @@ async function finishReal(request, env, ctx, payload, html) {
 
   if (!env.GOOGLE_SCRIPT_URL) {
     console.error(JSON.stringify({ event: 'GOOGLE_SCRIPT_URL not configured', requestId: payload.requestId }));
-    const error = callUs('The quote service is temporarily unavailable.');
-    return html ? redirectToEstimate(request, { error }) : json(503, { error });
+    return reject(request, html, 503, 'unavailable', callUs('The quote service is temporarily unavailable.'));
   }
 
   const result = await forwardStoredLead(env, payload);
   if (!result.ok) {
-    const error = callUs('The quote service is temporarily unavailable.');
-    return html ? redirectToEstimate(request, { error }) : json(502, { error });
+    return reject(request, html, 502, 'unavailable', callUs('The quote service is temporarily unavailable.'));
   }
   return html
     ? redirectToEstimate(request, { sent: '1', id: payload.requestId })

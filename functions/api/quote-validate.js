@@ -66,9 +66,6 @@ export function validateQuote(data, { demo = false } = {}) {
     density: clean(data?.density, 40),
     timeline: clean(data?.timeline, 40),
     callbackWindow: clean(data?.callbackWindow, 40),
-    // Accepted so a future owner-approved field can be stored. The page does
-    // not render a budget question unless SHOW_BUDGET is turned on.
-    budget: clean(data?.budget, 80),
     ref: clean(data?.ref, 40),
     utmSource: clean(data?.utm_source || data?.utmSource, 80),
     utmMedium: clean(data?.utm_medium || data?.utmMedium, 80),
@@ -82,6 +79,9 @@ export function validateQuote(data, { demo = false } = {}) {
     submittedAt: new Date().toISOString(),
     requestId: crypto.randomUUID()
   };
+
+  // The public form does not ask for a budget. Reject one so it is not stored.
+  if (String(data?.budget ?? '').trim()) return { error: 'That form field is not accepted.' };
 
   if (!payload.name) return { error: 'Name is required.' };
   if (payload.email && !EMAIL.test(payload.email)) return { error: 'Enter a valid email address.' };

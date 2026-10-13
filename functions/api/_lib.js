@@ -100,9 +100,43 @@ export async function isRateLimited(request, env, bindingName, limit, windowMs) 
   return memoryLimited(bindingName, ip, limit, windowMs);
 }
 
-export function contentTooLarge(request, maxBytes) {
-  const length = Number(request.headers.get('content-length') || 0);
-  return Number.isFinite(length) && length > maxBytes;
+// Content-Length is client-controlled and sometimes absent. When the header is
+// missing or not a number, read the body and stop once it passes maxBytes.
+// A request that fits is returned with the bytes restored so later .json()
+// and formData() still work.
+export async function enforceBodyLimit(request, maxBytes) {
+  const header = request.headers.get('content-length');
+  if (header != null && header !== '') {
+    const length = Number(header);
+    if (Number.isFinite(length)) return { tooLarge: length > maxBytes, request };
+  }
+  if (!request.body) return { tooLarge: false, request };
+
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        try { await reader.cancel(); } catch { /* stream already closed */ }
+        return { tooLarge: true, request };
+      }
+      chunks.push(value);
+    }
+  } catch {
+    return { tooLarge: true, request };
+  }
+
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return { tooLarge: false, request: new Request(request, { body }) };
 }
 
 export function isDemoFlag(value) {

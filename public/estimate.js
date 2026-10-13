@@ -17,7 +17,10 @@
   const params = new URLSearchParams(location.search);
   let meta = {};
   try { meta = JSON.parse(sessionStorage.getItem(META_KEY) || '{}'); } catch { meta = {}; }
+  // Demo follows the current URL only. A stored flag from an earlier ?demo=1
+  // visit must not swallow a later real estimate in the same tab.
   if (params.get('demo') === '1') meta.demo = true;
+  else delete meta.demo;
   if (params.get('ref')) meta.ref = params.get('ref').slice(0, 40);
   ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach((key) => {
     const value = params.get(key);
@@ -35,6 +38,7 @@
   document.getElementById('demo-dismiss')?.addEventListener('click', () => {
     banner.hidden = true;
     sessionStorage.setItem('txm-demo-banner-dismissed', '1');
+    // Dismissing the banner does not turn demo mode on or off.
   });
   document.getElementById('demo-field').value = meta.demo ? '1' : '';
   document.getElementById('ref-field').value = meta.ref || '';
@@ -47,8 +51,8 @@
   if (year) year.textContent = String(new Date().getFullYear());
 
   if (SHOW_BUDGET) {
-    // Intentionally empty until the owners approve wording. The API already
-    // accepts an optional `budget` string. Do not render price ranges here.
+    // Intentionally empty until the owners approve wording. The API rejects a
+    // budget value while this stays false. Do not render price ranges here.
   }
 
   const steps = [...form.querySelectorAll('.estimate-step')];
@@ -85,9 +89,26 @@
     }
   }
 
+  const ERROR_TEXT = {
+    too_large: 'That submission is too large. Please call (903) 833-3965.',
+    rate_limit: 'Too many requests. Please wait before trying again.',
+    bot_check: 'Bot check failed. Please try again.',
+    timing: 'Please wait a moment and tap Send again.',
+    invalid: 'Check the form and try again. If it still will not send, call (903) 833-3965.',
+    unavailable: 'The quote service is temporarily unavailable. Please call (903) 833-3965.',
+    review: 'We could not send that from the form. Please call (903) 833-3965.'
+  };
+
   function showFormError(message) {
     formError.textContent = message || '';
     formError.hidden = !message;
+  }
+
+  function errorFromQuery(value) {
+    if (!value || !Object.prototype.hasOwnProperty.call(ERROR_TEXT, value)) {
+      return value ? 'Something went wrong. Please call (903) 833-3965.' : '';
+    }
+    return ERROR_TEXT[value];
   }
 
   function checked(name) {
@@ -502,7 +523,7 @@
     if (params.get('demo') === '1') meta.demo = true;
     showSuccess(params.get('id') || '');
   } else if (params.get('error')) {
-    showFormError(params.get('error'));
+    showFormError(errorFromQuery(params.get('error')));
     showStep(step);
   } else {
     showStep(step);

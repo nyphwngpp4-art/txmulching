@@ -106,6 +106,31 @@ export function scoreSpam(payload, { duplicate = false } = {}) {
   return { score, reasons, verdict };
 }
 
+// Sales phrases and links are obvious pitches. A high score from anything
+// else (far ZIP, blank acreage, a repeat submit, "farm project") is held for
+// a person to read, not dropped.
+const OBVIOUS_PITCH = new Set([
+  'url',
+  'unsubscribe',
+  'seo',
+  'backlinks',
+  'b2b',
+  'phone_agent',
+  'ranking',
+  'send_files',
+  'priced_pitch'
+]);
+
+export function isObviousPitch(reasons) {
+  return (reasons || []).some((reason) => OBVIOUS_PITCH.has(reason));
+}
+
+// 'spam' is a silent drop. 'review' is a high score without an obvious pitch.
+export function spamDisposition(spam) {
+  if (spam?.verdict !== 'spam') return spam?.verdict || 'ok';
+  return isObviousPitch(spam.reasons) ? 'spam' : 'review';
+}
+
 export function applySpam(payload, spam) {
   if (spam.score > 0) {
     payload.spamScore = spam.score;

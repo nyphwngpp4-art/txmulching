@@ -4,7 +4,7 @@
 
 ## 1. Honeypot and minimum time
 
-The forms include a hidden `website` field. If it is filled, the Worker answers success and does not store or forward the lead.
+The forms include a hidden `txm_hp` field (older cached pages may still send `website`). If it is filled, the Worker stores the lead in D1 with status `honeypot` and does not email it. The visitor sees an error, not a thank-you. The 5-minute retry skips that status.
 
 JavaScript sends `elapsedMs`, the time since the page script started. Under about 3 seconds the Worker answers success and drops the lead. A no-JS submit has no `elapsedMs` and is not dropped for timing. A missing `elapsedMs` on a JSON post still gets the existing "wait a moment" error, so an older cached script can retry.
 
@@ -22,7 +22,8 @@ A far ZIP by itself is not spam. Nacogdoches, Vidor, and other Texas jobs are st
 
 | Score | What happens |
 | --- | --- |
-| High (8 or more) | Stored in D1 `leads` with `status` `spam`. Not forwarded to the Google Sheet, and the 5-minute retry skips it. The browser still sees a normal success response. |
+| High (8 or more) and the reasons include a sales phrase or a link | Stored in D1 `leads` with `status` `spam`. Not forwarded to the Google Sheet, and the 5-minute retry skips it. The browser still sees a normal success response. |
+| High (8 or more) without a sales phrase or a link | Stored with `status` `possible`, `possibleSpam` and `needsReview` set, and forwarded. The email subject starts with "Review this lead". |
 | Borderline (4–7) | Stored with `status` `possible` and forwarded. The JSON includes `possibleSpam: "yes"`. |
 | Low | Forwarded as usual. |
 

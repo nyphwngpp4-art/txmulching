@@ -80,7 +80,7 @@ export async function insertLead(env, payload, { status = 'new' } = {}) {
     payload.requestId,
     payload.submittedAt,
     JSON.stringify(storedPayload(payload)),
-    status === 'spam' || status === 'possible' ? status : 'new'
+    status === 'spam' || status === 'possible' || status === 'honeypot' ? status : 'new'
   ).run();
 }
 
@@ -186,9 +186,8 @@ export function retryIsDue(row, now = Date.now()) {
   return now - last >= backoffMs(row.attempts);
 }
 
-async function sendBackupAlert(env, row, payload) {
-  if (row.backup_alerted_at) return;
-  const summary = {
+function alertSummary(row, payload) {
+  return {
     requestId: row.request_id,
     name: payload.name || '',
     phone: payload.phone || '',
@@ -197,9 +196,14 @@ async function sendBackupAlert(env, row, payload) {
     acreage: payload.acreage || '',
     city: payload.city || ''
   };
+}
+
+async function sendBackupAlert(env, row, payload) {
+  if (row.backup_alerted_at) return;
   let noted = false;
   try {
     if (env.RESEND_API_KEY && env.BACKUP_ALERT_EMAIL) {
+      const summary = alertSummary(row, payload);
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -221,14 +225,13 @@ async function sendBackupAlert(env, row, payload) {
       const response = await fetch(env.BACKUP_ALERT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(summary)
+        body: JSON.stringify(alertSummary(row, payload))
       });
       noted = response.ok;
     } else {
       console.error(JSON.stringify({
         event: 'backup_alert_not_configured',
-        requestId: row.request_id,
-        summary
+        requestId: row.request_id
       }));
       noted = true;
     }
@@ -253,7 +256,8 @@ export async function retryUnforwarded(env) {
   const { results } = await env.LEADS.prepare(
     `SELECT request_id, payload_json, attempts, last_attempt_at, backup_alerted_at
      FROM leads
-     WHERE forwarded_at IS NULL AND attempts < 8 AND COALESCE(status, 'new') != 'spam'
+     WHERE forwarded_at IS NULL AND attempts < 8
+       AND COALESCE(status, 'new') NOT IN ('spam', 'honeypot')
      ORDER BY created_at
      LIMIT 20`
   ).all();

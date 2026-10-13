@@ -2,7 +2,15 @@
 // Server-side proxy to the xAI Responses API. Keeps the API key server-side.
 
 import businessData from '../../business-data.json';
-import { contentTooLarge, isRateLimited, json, methodNotAllowed, validOrigin } from './_lib.js';
+import {
+  enforceBodyLimit,
+  isRateLimited,
+  json,
+  methodNotAllowed,
+  turnstileActive,
+  validOrigin,
+  verifyTurnstile
+} from './_lib.js';
 
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_LENGTH = 1_000;
@@ -52,16 +60,25 @@ Behavior:
 - Keep most answers under 120 words.`;
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  let { request } = context;
+  const { env } = context;
 
   if (request.method !== 'POST') return methodNotAllowed('POST');
 
   if (!validOrigin(request, env)) return json(403, { error: 'Request origin is not allowed.' });
 
-  if (contentTooLarge(request, 25_000)) return json(413, { error: 'Request is too large.' });
+  const limited = await enforceBodyLimit(request, 25_000);
+  if (limited.tooLarge) return json(413, { error: 'Request is too large.' });
+  request = limited.request;
 
   if (await isRateLimited(request, env, 'CHAT_RL', 20, 60_000)) {
     return json(429, { error: 'Too many chat requests. Please wait a few minutes.' });
+  }
+
+  // Quote forms keep working without Turnstile. Chat does not: an open chat
+  // spends the xAI key. Both keys have to be set or this route stays off.
+  if (!turnstileActive(env)) {
+    return json(503, { error: 'The chat assistant has not been activated yet.' });
   }
 
   if (!env.XAI_API_KEY) {
@@ -69,6 +86,9 @@ export async function onRequest(context) {
   }
 
   const parsed = await request.json().catch(() => null);
+  const turnstile = await verifyTurnstile(request, env, parsed?.turnstileToken || parsed?.['cf-turnstile-response']);
+  if (!turnstile.ok) return json(403, { error: turnstile.error });
+
   const messages = sanitizeMessages(parsed?.messages);
   if (!messages.length || messages.at(-1)?.role !== 'user') {
     return json(400, { error: 'Enter a message to continue.' });

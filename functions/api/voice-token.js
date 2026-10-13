@@ -3,15 +3,16 @@
 // so the browser can connect to wss://api.x.ai without exposing XAI_API_KEY.
 //
 // Origin alone is not enough: a non-browser client can set it. Sec-Fetch-Site
-// blocks ordinary cross-site browser calls and naive curl. A client that
-// forges that header still needs a Turnstile token once TURNSTILE_SITE_KEY and
-// TURNSTILE_SECRET_KEY are both set. Until then the check is skipped.
+// blocks ordinary cross-site browser calls and naive curl. Both Turnstile keys
+// are required before a token is minted. A client that forges those headers
+// still needs a Turnstile token.
 
 import {
   browserSameOrigin,
   isRateLimited,
   json,
   methodNotAllowed,
+  turnstileActive,
   validOrigin,
   verifyTurnstile
 } from './_lib.js';
@@ -24,6 +25,11 @@ export async function onRequest(context) {
   if (!browserSameOrigin(request)) return json(403, { error: 'Request origin is not allowed.' });
   if (await isRateLimited(request, env, 'VOICE_RL', 5, 60_000)) {
     return json(429, { error: 'Too many voice sessions. Please wait a few minutes.' });
+  }
+
+  // Same rule as chat: no token minting until both Turnstile keys exist.
+  if (!turnstileActive(env)) {
+    return json(503, { error: 'Voice has not been activated yet.' });
   }
 
   const parsed = await request.json().catch(() => ({}));

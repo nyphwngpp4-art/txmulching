@@ -1,10 +1,12 @@
 import { env, fetchMock } from 'cloudflare:test';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { sheetSafe, sniffImage, submittedTooFast, timingError, verifyTurnstile } from '../functions/api/_lib.js';
-import { scoreSpam } from '../functions/api/spam.js';
+import { enforceBodyLimit, sheetSafe, sniffImage, submittedTooFast, timingError, verifyTurnstile } from '../functions/api/_lib.js';
+import { scoreSpam, spamDisposition } from '../functions/api/spam.js';
 import { onRequest as quote } from '../functions/api/quote.js';
 import { onRequest as quotePhoto } from '../functions/api/quote-photo.js';
 import { onRequest as voiceToken } from '../functions/api/voice-token.js';
+import { onRequest as chat } from '../functions/api/chat.js';
+import { onRequest as demoLeads } from '../functions/api/demo-leads.js';
 import { readLeadPhoto } from '../functions/api/photos.js';
 import { retryUnforwarded } from '../functions/api/pipeline.js';
 
@@ -118,6 +120,11 @@ describe('spam score', () => {
       acreage: ''
     });
     expect(phish.verdict).toBe('spam');
+    expect(spamDisposition(pitch)).toBe('spam');
+    expect(spamDisposition({
+      verdict: 'spam',
+      reasons: ['farm_project', 'zip_out_of_area', 'acreage_missing', 'duplicate']
+    })).toBe('review');
   });
 });
 
@@ -133,17 +140,62 @@ describe('POST /api/quote', () => {
     expect(body.error).toMatch(/833-3965/);
   });
 
-  it('accepts a honeypot without storing a lead', async () => {
+  it('stores a honeypot for review and does not pretend it was sent', async () => {
     const response = await quote({
-      request: quoteRequest({ ...estimateBody, website: 'https://spam.test' }, { ip: '203.0.113.21' }),
+      request: quoteRequest({ ...estimateBody, txm_hp: 'filled-by-accident' }, { ip: '203.0.113.21' }),
+      env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+      ctx: ctx()
+    });
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.ok).toBeUndefined();
+    expect(body.requestId).toBeUndefined();
+    expect(body.error).toMatch(/could not send/i);
+    const row = await env.LEADS.prepare(
+      `SELECT status, forwarded_at FROM leads WHERE payload_json LIKE '%"honeypot":"yes"%'`
+    ).first();
+    expect(row.status).toBe('honeypot');
+    expect(row.forwarded_at).toBeNull();
+
+    const legacy = await quote({
+      request: quoteRequest({ ...estimateBody, website: 'https://spam.test', email: 'legacy-hp@example.com' }, { ip: '203.0.113.21' }),
+      env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+      ctx: ctx()
+    });
+    expect(legacy.status).toBe(400);
+  });
+
+  it('rejects a budget value while the public form leaves that field off', async () => {
+    const response = await quote({
+      request: quoteRequest({ ...estimateBody, demo: '1', budget: '5000' }, { ip: '203.0.113.94' }),
       env,
       ctx: ctx()
     });
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.requestId).toBeUndefined();
-    const row = await env.LEADS.prepare('SELECT COUNT(*) AS n FROM leads').first().catch(() => ({ n: 0 }));
-    expect(Number(row?.n || 0)).toBe(0);
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatch(/not accepted/i);
+  });
+
+  it('redirects a no-JS error to a fixed code', async () => {
+    const form = new FormData();
+    form.set('intake', 'estimate');
+    form.set('name', 'Ada');
+    const response = await quote({
+      request: new Request('https://txmulching.test/api/quote', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://txmulching.test',
+          Host: 'txmulching.test',
+          'cf-connecting-ip': '203.0.113.93'
+        },
+        body: form
+      }),
+      env,
+      ctx: ctx()
+    });
+    expect(response.status).toBe(303);
+    const location = response.headers.get('Location') || '';
+    expect(location).toContain('error=invalid');
+    expect(location).not.toMatch(/required/i);
   });
 
   it('rejects a missing estimate phone and a bad service', async () => {
@@ -508,6 +560,56 @@ describe('lead spam protection', () => {
     }
   });
 
+  it('forwards a high score that is not an obvious pitch', async () => {
+    const original = globalThis.fetch;
+    let calls = 0;
+    let last = null;
+    globalThis.fetch = async (_input, init) => {
+      calls += 1;
+      last = JSON.parse(init.body);
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    };
+    const body = {
+      intake: 'callback',
+      elapsedMs: 5000,
+      name: 'Sam',
+      email: 'farm-review@example.com',
+      phone: '(903) 555-0166',
+      description: 'farm project on the back acre',
+      zipcode: '10001'
+    };
+    try {
+      const firstWait = ctx();
+      const first = await quote({
+        request: quoteRequest(body, { ip: '203.0.113.96' }),
+        env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+        ctx: firstWait
+      });
+      expect(first.status).toBe(200);
+      await firstWait.drain();
+      expect(calls).toBe(1);
+
+      const secondWait = ctx();
+      const second = await quote({
+        request: quoteRequest(body, { ip: '203.0.113.97' }),
+        env: { ...env, GOOGLE_SCRIPT_URL: 'https://script.test/exec' },
+        ctx: secondWait
+      });
+      expect(second.status).toBe(200);
+      await secondWait.drain();
+      expect(calls).toBe(2);
+      expect(last.needsReview).toBe('yes');
+      expect(last.possibleSpam).toBe('yes');
+      const saved = await second.json();
+      const row = await env.LEADS.prepare(
+        'SELECT status FROM leads WHERE request_id = ?'
+      ).bind(saved.requestId).first();
+      expect(row.status).toBe('possible');
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
   it('keeps a demo sales pitch off the owner script', async () => {
     const response = await quote({
       request: quoteRequest({
@@ -601,7 +703,7 @@ describe('voice', () => {
         },
         body: '{}'
       }),
-      env: { ...env, XAI_API_KEY: 'test' }
+      env: { ...env, XAI_API_KEY: 'test', TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' }
     });
     expect(spoofed.status).toBe(403);
 
@@ -617,8 +719,74 @@ describe('voice', () => {
         },
         body: '{}'
       }),
-      env
+      env: { ...env, XAI_API_KEY: 'test-key' }
     });
     expect(browser.status).toBe(503);
+  });
+});
+
+describe('chat and demo leads', () => {
+  it('refuses chat until both Turnstile keys exist', async () => {
+    const response = await chat({
+      request: new Request('https://txmulching.test/api/chat', {
+        method: 'POST',
+        headers: {
+          Origin: 'https://txmulching.test',
+          Host: 'txmulching.test',
+          'Content-Type': 'application/json',
+          'cf-connecting-ip': '203.0.113.61'
+        },
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'hello' }] })
+      }),
+      env: { ...env, XAI_API_KEY: 'test-key' }
+    });
+    expect(response.status).toBe(503);
+  });
+
+  it('does not return demo leads for DEMO_STUB or a localhost Host', async () => {
+    const open = await demoLeads({
+      request: new Request('https://txmulching.test/api/demo-leads', {
+        headers: { Host: 'localhost' }
+      }),
+      env: { ...env, DEMO_STUB: '1' }
+    });
+    expect(open.status).toBe(404);
+
+    const wrong = await demoLeads({
+      request: new Request('https://txmulching.test/api/demo-leads', {
+        headers: { Host: 'localhost', 'X-Demo-Leads-Secret': 'nope' }
+      }),
+      env: { ...env, DEMO_STUB: '1', DEMO_LEADS_SECRET: 'local-secret' }
+    });
+    expect(wrong.status).toBe(404);
+
+    const allowed = await demoLeads({
+      request: new Request('https://txmulching.test/api/demo-leads', {
+        headers: { Host: 'evil.example', 'X-Demo-Leads-Secret': 'local-secret' }
+      }),
+      env: { ...env, DEMO_LEADS_SECRET: 'local-secret' }
+    });
+    expect(allowed.status).toBe(200);
+    expect((await allowed.json()).ok).toBe(true);
+  });
+});
+
+describe('body limit', () => {
+  it('rejects a body that has no Content-Length once it passes the cap', async () => {
+    const bytes = new Uint8Array(120);
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      }
+    });
+    const request = new Request('https://txmulching.test/api/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: stream,
+      duplex: 'half'
+    });
+    const limited = await enforceBodyLimit(request, 100);
+    expect(limited.tooLarge).toBe(true);
   });
 });

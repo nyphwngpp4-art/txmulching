@@ -1,19 +1,27 @@
 // Worker route: GET /api/demo-leads
-// Local stub inspection only. Refuses anything that is not loopback, and
-// refuses production unless DEMO_STUB=1 was set on purpose for a local run.
+// Returns stored demo leads only when DEMO_LEADS_SECRET is set and the
+// request sends the same value in X-Demo-Leads-Secret. DEMO_STUB and the
+// Host header do not grant access.
 
 import { json, methodNotAllowed } from './_lib.js';
 import { listDemoLeads } from './pipeline.js';
 
-function loopback(request) {
-  const host = (request.headers.get('host') || '').split(':')[0];
-  return host === '127.0.0.1' || host === 'localhost' || host === '[::1]';
+function secretMatches(provided, expected) {
+  const token = String(expected || '');
+  if (!token) return false;
+  const a = new TextEncoder().encode(String(provided || ''));
+  const b = new TextEncoder().encode(token);
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a[i] ^ b[i];
+  return diff === 0;
 }
 
 export async function onRequest(context) {
   const { request, env } = context;
   if (request.method !== 'GET') return methodNotAllowed('GET');
-  if (env.DEMO_STUB !== '1' || !loopback(request)) {
+  const provided = request.headers.get('x-demo-leads-secret') || '';
+  if (!secretMatches(provided, env.DEMO_LEADS_SECRET)) {
     return json(404, { error: 'Not found.' });
   }
   const leads = await listDemoLeads(env);

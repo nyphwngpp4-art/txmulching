@@ -14,10 +14,13 @@ XAI_MODEL=
 # Comma-separated. Leave blank to allow the request Host (local wrangler included).
 ALLOWED_ORIGINS=
 
-# Demo submissions skip GOOGLE_SCRIPT_URL. DEMO_STUB=1 exposes GET /api/demo-leads
-# on localhost only, for the local end-to-end check.
+# Demo submissions skip GOOGLE_SCRIPT_URL. DEMO_STUB=1 only keeps an in-memory
+# copy during local dev. It does not open GET /api/demo-leads.
+# That route answers only when DEMO_LEADS_SECRET is set and the request sends
+# the same value in the X-Demo-Leads-Secret header.
 DEMO_SCRIPT_URL=
 DEMO_STUB=1
+DEMO_LEADS_SECRET=
 
 # Optional. Only used if an R2 LEAD_PHOTOS binding is added later.
 # The live photo path is Google Drive through Apps Script, not R2.

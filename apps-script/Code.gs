@@ -1,21 +1,20 @@
 // TX Mulching lead sink. A person deploys this from the Google account that
-// owns the Sheet (agavi.aiconsulting@gmail.com). Editing this file does not
-// change production until that deploy happens. See apps-script/README.md.
+// owns the Sheet. Editing this file does not change production until that
+// deploy happens. See apps-script/README.md.
+//
+// Required Script Properties, set BEFORE this version is deployed:
+//   SHEET_ID       — the spreadsheet id (copy from the previous Code.gs)
+//   NOTIFY_EMAILS  — comma-separated owner addresses (copy from the previous Code.gs)
+//   TOKEN          — same value as the Worker secret APPS_SCRIPT_TOKEN
+// Optional:
+//   QUOTA_WATCH_EMAIL — who hears about a low MailApp quota (defaults to the first notify address)
+//   PHOTO_FOLDER_ID   — Drive folder for lead photos (authorizePhotos fills this in)
 
-var SHEET_ID = '1LoWcYng7Je_KaVSGKdFVTAKmNGSQ06sGuFVk_8pHqoI';
 var LEADS_SHEET = 'Sheet1';
 var DEMO_SHEET = 'Demo Leads';
 var PHOTO_FOLDER_NAME = 'TX Mulching Lead Photos';
 var PHOTO_MAX_BYTES = 320 * 1024;
-
-// Everyone who gets a real lead. Demo posts never email this list.
-var NOTIFY_EMAILS = [
-  'messamoreh@gmail.com',     // Hal
-  'messamore.gk@gmail.com',   // Kim
-  'info@txmulching.com',      // business address
-  'j.messamore@gmail.com'     // backstop — remove if not wanted
-];
-var QUOTA_WATCH_EMAIL = 'j.messamore@gmail.com';
+var PHOTO_COLUMN = 17;
 
 function doPost(e) {
   var data = {};
@@ -29,51 +28,60 @@ function doPost(e) {
     return json_({ ok: false, error: 'unauthorized' });
   }
 
+  var config = deliveryConfig_();
+  if (!config) {
+    console.error('Lead delivery is not configured. Set the SHEET_ID and NOTIFY_EMAILS script properties.');
+    return json_({ ok: false, error: 'not configured' });
+  }
+
   var demo = data.demo === true || data.demo === 'true' || data.demo === '1';
   // Save Drive files before the row and the email, then drop the bytes so
   // they are not written into the Sheet.
   try {
-    data.photoLinks = saveLeadPhotos_(data);
+    data.photoLinks = saveLeadPhotos_(data, config.emails);
   } catch (err) {
-    console.error('photo save failed', err);
+    console.error('photo save failed');
     data.photoLinks = photoLinks_(data);
   }
   delete data.photos;
 
-  var sheet = openSheet_(demo ? DEMO_SHEET : LEADS_SHEET);
-  sheet.appendRow([
-    new Date(),
-    cell_(data.name),
-    cell_(data.phone),
-    cell_(data.email),
-    cell_(data.zipcode),
-    cell_(data.acreage),
-    cell_(data.serviceType),
-    cell_(data.description),
-    cell_(data.requestId),
-    cell_(data.address),
-    cell_(data.city),
-    cell_(data.county),
-    cell_(data.density),
-    cell_(data.timeline),
-    cell_(data.callbackWindow),
-    cell_(data.budget),
-    cell_(photoLinks_(data)),
-    cell_(data.ref),
-    cell_(data.source),
-    cell_(data.possibleSpam)
-  ]);
+  var sheet = openSheet_(config.sheetId, demo ? DEMO_SHEET : LEADS_SHEET);
+  upsertLead_(sheet, data);
 
   if (!demo) {
     try {
-      notifyLead_(data);
+      notifyLead_(data, config);
     } catch (err) {
-      console.error('notify failed', err);
+      console.error('notify failed');
       return json_({ ok: false, error: 'notify failed' });
     }
   }
 
   return json_({ ok: true });
+}
+
+function deliveryConfig_() {
+  var props = PropertiesService.getScriptProperties();
+  var sheetId = String(props.getProperty('SHEET_ID') || '').replace(/^\s+|\s+$/g, '');
+  var emails = parseEmails_(props.getProperty('NOTIFY_EMAILS'));
+  if (!sheetId || !emails.length) return null;
+  var quotaWatch = String(props.getProperty('QUOTA_WATCH_EMAIL') || '').replace(/^\s+|\s+$/g, '');
+  return {
+    sheetId: sheetId,
+    emails: emails,
+    quotaWatch: quotaWatch || emails[0]
+  };
+}
+
+function parseEmails_(value) {
+  var parts = String(value || '').split(/[,;\n]/);
+  var out = [];
+  for (var i = 0; i < parts.length; i++) {
+    var email = parts[i].replace(/^\s+|\s+$/g, '');
+    if (!email || out.indexOf(email) !== -1) continue;
+    out.push(email);
+  }
+  return out;
 }
 
 function tokenOk_(data) {
@@ -96,7 +104,7 @@ function photoLinks_(data) {
   return String(links || '');
 }
 
-function saveLeadPhotos_(data) {
+function saveLeadPhotos_(data, emails) {
   var photos = data.photos;
   var links = [];
   var already = photoLinks_(data);
@@ -112,7 +120,7 @@ function saveLeadPhotos_(data) {
     try {
       bytes = Utilities.base64Decode(raw);
     } catch (err) {
-      console.error('photo decode failed', err);
+      console.error('photo decode failed');
       continue;
     }
     if (!bytes || bytes.length === 0 || bytes.length > PHOTO_MAX_BYTES) continue;
@@ -120,10 +128,22 @@ function saveLeadPhotos_(data) {
     var mime = imageMime_(bytes);
     var blob = Utilities.newBlob(bytes, mime, fileName_(data, links.length, mime));
     var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    // The file stays private to the script owner. Share view access with the
+    // notify addresses only. A failed share must not drop the lead.
+    sharePhoto_(file, emails);
     links.push(file.getUrl());
   }
   return links.join('\n');
+}
+
+function sharePhoto_(file, emails) {
+  for (var i = 0; i < emails.length; i++) {
+    try {
+      file.addViewer(emails[i]);
+    } catch (err) {
+      console.error('photo share failed');
+    }
+  }
 }
 
 function imageMime_(bytes) {
@@ -154,7 +174,7 @@ function photoFolder_() {
     try {
       return DriveApp.getFolderById(id);
     } catch (err) {
-      console.error('PHOTO_FOLDER_ID invalid', err);
+      console.error('PHOTO_FOLDER_ID invalid');
     }
   }
   var found = DriveApp.getFoldersByName(PHOTO_FOLDER_NAME);
@@ -170,8 +190,8 @@ function authorizePhotos() {
   Logger.log(folder.getName() + ' ' + folder.getId());
 }
 
-function openSheet_(name) {
-  var ss = SpreadsheetApp.openById(SHEET_ID);
+function openSheet_(sheetId, name) {
+  var ss = SpreadsheetApp.openById(sheetId);
   var sheet = ss.getSheetByName(name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
@@ -188,13 +208,66 @@ function headerRow_() {
   ];
 }
 
-function notifyLead_(data) {
+function rowValues_(data) {
+  var flag = (data.needsReview === 'yes' || data.needsReview === true) ? 'review' : data.possibleSpam;
+  return [
+    new Date(),
+    cell_(data.name),
+    cell_(data.phone),
+    cell_(data.email),
+    cell_(data.zipcode),
+    cell_(data.acreage),
+    cell_(data.serviceType),
+    cell_(data.description),
+    cell_(data.requestId),
+    cell_(data.address),
+    cell_(data.city),
+    cell_(data.county),
+    cell_(data.density),
+    cell_(data.timeline),
+    cell_(data.callbackWindow),
+    cell_(data.budget),
+    cell_(photoLinks_(data)),
+    cell_(data.ref),
+    cell_(data.source),
+    cell_(flag)
+  ];
+}
+
+// A retry of the same requestId updates the row. Photo links already on the
+// row are kept when this attempt has no new links (photo bytes are not retried).
+function upsertLead_(sheet, data) {
+  var values = rowValues_(data);
+  var requestId = String(data.requestId || '');
+  var found = requestId ? findRequestRow_(sheet, requestId) : 0;
+  if (!found) {
+    sheet.appendRow(values);
+    return;
+  }
+  if (!String(values[PHOTO_COLUMN - 1] || '').replace(/^\s+|\s+$/g, '')) {
+    var existingPhotos = sheet.getRange(found, PHOTO_COLUMN).getValue();
+    if (existingPhotos) values[PHOTO_COLUMN - 1] = existingPhotos;
+  }
+  sheet.getRange(found, 2, 1, values.length - 1).setValues([values.slice(1)]);
+}
+
+function findRequestRow_(sheet, requestId) {
+  var last = sheet.getLastRow();
+  if (last < 2) return 0;
+  var ids = sheet.getRange(2, 9, last - 1, 1).getValues();
+  for (var i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === requestId) return i + 2;
+  }
+  return 0;
+}
+
+function notifyLead_(data, config) {
   var remaining = MailApp.getRemainingDailyQuota();
-  maybeWarnQuota_(remaining);
+  maybeWarnQuota_(remaining, config.quotaWatch);
 
   var subject = subjectFor_(data);
-  var body = bodyFor_(data);
-  var replyTo = data.email || 'info@txmulching.com';
+  var body = bodyFor_(data, config.sheetId);
+  var replyTo = data.email || '';
 
   if (remaining < 1) {
     throw new Error('MailApp daily quota is exhausted');
@@ -203,51 +276,53 @@ function notifyLead_(data) {
   // One message so a burst cannot multiply the recipient count. If that send
   // throws, fall back to one recipient at a time so a single bad address
   // cannot hide the lead from everyone else.
-  var recipients = remaining >= NOTIFY_EMAILS.length ? NOTIFY_EMAILS : [QUOTA_WATCH_EMAIL];
+  var recipients = remaining >= config.emails.length ? config.emails : [config.quotaWatch];
   try {
-    MailApp.sendEmail({
+    var message = {
       to: recipients[0],
       bcc: recipients.slice(1).join(','),
       name: 'TX Mulching Leads',
-      replyTo: replyTo,
       subject: subject,
       body: body
-    });
+    };
+    if (replyTo) message.replyTo = replyTo;
+    MailApp.sendEmail(message);
     return;
   } catch (err) {
-    console.error('group email failed', err);
+    console.error('group email failed');
   }
 
   recipients.forEach(function (to) {
     try {
-      MailApp.sendEmail({
+      var single = {
         to: to,
         name: 'TX Mulching Leads',
-        replyTo: replyTo,
         subject: subject,
         body: body
-      });
+      };
+      if (replyTo) single.replyTo = replyTo;
+      MailApp.sendEmail(single);
     } catch (inner) {
-      console.error('email failed for ' + to, inner);
+      console.error('email failed');
     }
   });
 }
 
-function maybeWarnQuota_(remaining) {
-  if (remaining >= 8) return;
+function maybeWarnQuota_(remaining, quotaWatch) {
+  if (remaining >= 8 || !quotaWatch) return;
   var props = PropertiesService.getScriptProperties();
   var today = new Date().toDateString();
   if (props.getProperty('QUOTA_WARNED_ON') === today) return;
   props.setProperty('QUOTA_WARNED_ON', today);
   try {
     MailApp.sendEmail({
-      to: QUOTA_WATCH_EMAIL,
+      to: quotaWatch,
       name: 'TX Mulching Leads',
       subject: 'TX Mulching lead mail quota is low (' + remaining + ' left)',
       body: 'MailApp has about ' + remaining + ' recipient sends left today. Real lead alerts may start failing until the quota resets.'
     });
   } catch (err) {
-    console.error('quota warning failed', err);
+    console.error('quota warning failed');
   }
 }
 
@@ -258,7 +333,8 @@ function subjectFor_(data) {
   var who = shortName_(data.name);
   var phone = data.phone || 'no phone';
   var subject = 'New lead: ' + acres + ' ' + service + ' near ' + where + ' — ' + who + ' ' + phone;
-  if (data.possibleSpam === 'yes' || data.possibleSpam === true) subject = 'Possible spam: ' + subject;
+  if (data.needsReview === 'yes' || data.needsReview === true) subject = 'Review this lead: ' + subject;
+  else if (data.possibleSpam === 'yes' || data.possibleSpam === true) subject = 'Possible spam: ' + subject;
   return subject.slice(0, 180);
 }
 
@@ -274,7 +350,7 @@ function shortName_(name) {
   return parts[0] + ' ' + parts[parts.length - 1].charAt(0).toUpperCase() + '.';
 }
 
-function bodyFor_(data) {
+function bodyFor_(data, sheetId) {
   var mapQuery = [data.address, data.city, data.county, data.zipcode, 'TX'].filter(Boolean).join(', ');
   var mapLink = mapQuery
     ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapQuery)
@@ -289,7 +365,6 @@ function bodyFor_(data) {
     'Brush: ' + (data.density || '—'),
     'Timeline: ' + (data.timeline || '—'),
     'Callback window: ' + (data.callbackWindow || '—'),
-    'Budget note: ' + (data.budget || '—'),
     'Address: ' + (data.address || '—'),
     'City: ' + (data.city || '—'),
     'County: ' + (data.county || '—'),
@@ -302,11 +377,11 @@ function bodyFor_(data) {
     'Reference: ' + (data.requestId || '—'),
     '',
     'Call back: ' + (data.phone || '—'),
-    'All leads: https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit'
+    'All leads: https://docs.google.com/spreadsheets/d/' + sheetId + '/edit'
   ];
-  if (data.possibleSpam === 'yes' || data.possibleSpam === true) {
+  if (data.needsReview === 'yes' || data.needsReview === true || data.possibleSpam === 'yes' || data.possibleSpam === true) {
     var why = spamWhy_(data);
-    lines.unshift('Possible spam: yes' + (why ? ' (' + why + ')' : ''));
+    lines.unshift('Needs review: yes' + (why ? ' (' + why + ')' : ''));
   }
   return lines.join('\n');
 }
@@ -317,15 +392,20 @@ function json_(body) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Run once from the editor after setting the TOKEN script property.
-// Sends a clearly labelled test to the notify list. Delete the Sheet row after.
+// Run once from the editor after the script properties are set.
+// Sends a clearly labelled test to the notify list. Does not write a Sheet row.
 function testNotification() {
+  var config = deliveryConfig_();
+  if (!config) {
+    console.error('Lead delivery is not configured. Set the SHEET_ID and NOTIFY_EMAILS script properties.');
+    return;
+  }
   notifyLead_({
     name: 'TEST — delete me',
     phone: '(555) 010-0000',
     acreage: '5 acres',
     serviceType: 'Forestry Mulching',
     city: 'Tyler',
-    description: 'Test of lead notifications. Delete this row.'
-  });
+    description: 'Test of lead notifications. Delete this row if one was created.'
+  }, config);
 }

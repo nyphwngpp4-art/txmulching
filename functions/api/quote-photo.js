@@ -2,7 +2,7 @@
 // Accepts one already-compressed image and stores it under drafts/ in R2.
 
 import {
-  contentTooLarge,
+  enforceBodyLimit,
   isRateLimited,
   json,
   methodNotAllowed,
@@ -12,12 +12,15 @@ import {
 import { storePhoto } from './photos.js';
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  let { request } = context;
+  const { env } = context;
   if (request.method !== 'POST') return methodNotAllowed('POST');
   if (!validOrigin(request, env, { allowMissing: false })) {
     return json(403, { error: 'Request origin is not allowed.' });
   }
-  if (contentTooLarge(request, 6_000_000)) return json(413, { error: 'That photo is too large.' });
+  const limited = await enforceBodyLimit(request, 6_000_000);
+  if (limited.tooLarge) return json(413, { error: 'That photo is too large.' });
+  request = limited.request;
   if (await isRateLimited(request, env, 'PHOTO_RL', 30, 60_000)) {
     return json(429, { error: 'Too many photo uploads. Please wait a moment.' });
   }

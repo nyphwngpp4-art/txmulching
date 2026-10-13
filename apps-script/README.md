@@ -1,9 +1,14 @@
 # Apps Script redeploy
 
 `Code.gs` is the source of truth for the lead Sheet and the owner email. The
-live script does not read this file. Someone signed in as
-`agavi.aiconsulting@gmail.com` has to paste it into the Apps Script project
-and deploy a new version.
+live script does not read this file. Someone signed in as the Google account
+that owns the Sheet has to paste it into the Apps Script project and deploy
+a new version.
+
+Set the script properties before that deploy. This version reads `SHEET_ID`
+and `NOTIFY_EMAILS` from Script Properties. If either is missing, the delivery
+fails and the log line does not include the customer's phone or email. Copy
+both values from the previous `Code.gs` before you replace it.
 
 Do this in one sitting with the Worker secret, or real leads will 502 (or sit
 in D1 unforwarded) until both sides agree on the token.
@@ -19,17 +24,22 @@ in D1 unforwarded) until both sides agree on the token.
    Address, City, County, Density, Timeline, Callback window, Budget, Photo links, Ref, Source, Possible spam
 
    A–I stay: Timestamp, Name, Phone, Email, ZIP, Acreage, Service, Details, Request ID.
-   Column T, Possible spam, is `yes` only for a borderline lead. High-score spam
-   never reaches this Sheet. Until this script is redeployed, the Worker still
-   forwards borderline leads and the live script ignores the extra JSON field.
+   Column T, Possible spam, is `yes` for a borderline lead and `review` when a
+   high score had no sales phrase or link. An obvious pitch still never reaches
+   this Sheet. Until this script is redeployed, the Worker still forwards
+   borderline leads and the live script ignores the extra JSON field.
 3. Generate a long random token (`openssl rand -hex 32`). You will put the
    same value in two places.
 
 ## Deploy
 
 1. Open the Apps Script project bound to the "TX Mulching Quote Leads" Sheet.
-2. Replace the whole script with `apps-script/Code.gs`.
-3. Project Settings → Script properties → Add `TOKEN` = the random token.
+2. Project Settings → Script properties. Set these before you replace the script:
+   - `SHEET_ID` — copy from the previous `Code.gs`
+   - `NOTIFY_EMAILS` — comma-separated, copy from the previous `Code.gs`
+   - `TOKEN` — the random token from the step above
+   - `QUOTA_WATCH_EMAIL` — optional; defaults to the first notify address
+3. Replace the whole script with `apps-script/Code.gs`.
 4. Deploy → Manage deployments → pencil → Version: New version → Deploy.
    Execute as: Me. Who has access: Anyone.
 5. If this is a brand-new deployment (new URL), copy the `/exec` URL.
@@ -43,9 +53,9 @@ in D1 unforwarded) until both sides agree on the token.
 ## Check
 
 1. Run `testNotification` once from the editor. Confirm the new subject
-   (`New lead: …`) reaches Hal, Kim, `info@`, and Jay. Delete the test from
-   their inboxes if you do not want it kept. This function does not write a
-   row.
+   (`New lead: …`) reaches every address in `NOTIFY_EMAILS`. Delete the test
+   from those inboxes if you do not want it kept. This function does not write
+   a row.
 2. From a preview or local Worker with the secrets set, submit one lead
    named `TEST — delete me`. Confirm one Sheet row, the literal text if you
    use the name `=1+1` (not a calculated `2`), and one email whose subject
@@ -68,10 +78,13 @@ the owner email.
 2. Optional: create the folder yourself, share it with the script's Google
    account, and set `PHOTO_FOLDER_ID` to that folder's id before the first
    lead with photos.
-3. Each file is set to "anyone with the link can view" so the owners can open
-   it from the email without a Drive login. The folder itself is not made
-   public. The incoming request stays under Apps Script's about-50 MB limit
-   because six photos at 300 KB are about 2.4 MB of base64.
+3. Each file stays private to the script owner. The script then adds the
+   notify addresses as viewers. If a share fails, the lead row and the email
+   still go out. The folder itself is not made public. The incoming request
+   stays under Apps Script's about-50 MB limit because six photos at 300 KB
+   are about 2.4 MB of base64. A second delivery with the same request id
+   updates that row instead of appending another. Photo links already on the
+   row are kept when the retry has no new image bytes.
 4. Redeploy a new version after this change. Until that deploy, production
    still ignores the `photos` array and the Photo links cell stays empty.
 5. A failed Drive save still writes the Sheet row and sends the email. The
@@ -88,11 +101,13 @@ the same `TOKEN`. The script writes `demo: true` posts to a tab named
 
 If `DEMO_SCRIPT_URL` is unset, demo leads stay in the D1 `demo_leads` table
 when the `LEADS` binding exists, and in the local stub when `DEMO_STUB=1`.
+`DEMO_STUB=1` does not open `GET /api/demo-leads`. That route needs
+`DEMO_LEADS_SECRET` and a matching `X-Demo-Leads-Secret` header.
 
 ## Quota
 
-The script sends one email per lead (owners in BCC) after checking
-`MailApp.getRemainingDailyQuota()`. Under about 8 remaining sends it emails
-Jay once that day. Under 1 it returns `{ok:false}` so the Worker keeps the
-D1 row and retries. A consumer Gmail account is still about 100 recipients
-a day; four owners means about 25 leads before the quota warning.
+The script sends one email per lead (the other notify addresses in BCC) after
+checking `MailApp.getRemainingDailyQuota()`. Under about 8 remaining sends it
+emails `QUOTA_WATCH_EMAIL` (or the first notify address) once that day. Under
+1 it returns `{ok:false}` so the Worker keeps the D1 row and retries. A
+consumer Gmail account is still about 100 recipients a day.
